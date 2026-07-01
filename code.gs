@@ -2061,9 +2061,9 @@ const URL_BUILDER_PLATFORM_INSTRUCTIONS = {
   },
   'Pinterest': {
     column: 'Full URL',
-    short:  "Paste the Full URL (column A) into Pinterest's destination URL field.",
-    full:   "Add 'Full URL' — column A — directly to the Destination URL field for each Pin/ad driving to this destination URL. Pinterest fills the dynamic tracking parameters ({campaignid} and {adid}) at serve time. After adding, confirm the parameters append correctly in the ad preview.",
-    screenshotUrl: ''  // TODO: upload a Pinterest destination-URL example and paste its Drive thumbnail link here
+    short:  "Paste the Full URL (column A) into Pinterest's Destination link field. Validate via the ad's URL preview.",
+    full:   "Add 'Full URL' — column A — directly to the Destination link field for the ad. To validate: at the ad level, select 'Edit' on an ad; in the Ad details section, expand the 'URL preview' dropdown and confirm the dynamic UTM parameters ({campaignid}, {adid}) are populated; then click the previewed link to open it in a new tab and confirm the page loads properly. FYI — this account also has account-level UTM auto-tagging enabled (Business Manager → URL tracking), which appends the same parameters automatically; Pinterest will NOT override parameters you enter manually, so entering the Full URL here is safe.",
+    screenshotUrl: ''  // TODO: add a Pinterest URL-preview screenshot (Drive thumbnail link) when one is available
   }
 };
 
