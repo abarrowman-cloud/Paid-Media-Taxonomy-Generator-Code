@@ -1,0 +1,4097 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* =============================================================
+     Viral Nation theme
+     Primary:   #000000 / #FFFFFF
+     Secondary: #FF005C (pink), #FF6927 (orange), #FFC227 (yellow)
+     Font:      Proxima Nova (with Montserrat as web fallback)
+  ============================================================= */
+  :root {
+    --vn-black:   #000000;
+    --vn-white:   #FFFFFF;
+    --vn-pink:    #FF005C;
+    --vn-orange:  #FF6927;
+    --vn-yellow:  #FFC227;
+
+    --vn-ink:     #111111;
+    --vn-muted:   #5A5A5A;
+    --vn-line:    #E3E3E3;
+    --vn-panel:   #F7F7F7;
+    --vn-soft:    #FAFAFA;
+    --vn-pass-bg: #E6F4E6;
+    --vn-pass-fg: #0B7027;
+    --vn-fail-bg: #FDE8E8;
+    --vn-fail-fg: #C5221F;
+    --vn-warn-bg: #FFF4D6;
+    --vn-warn-fg: #7A5A00;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Proxima Nova', 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    margin: 0;
+    padding: 0;
+    color: var(--vn-ink);
+    background: var(--vn-soft);
+    font-weight: 500;
+  }
+
+  .wrap { max-width: 900px; margin: 0 auto; background: var(--vn-white); min-height: 100vh; box-shadow: 0 0 0 1px var(--vn-line); }
+
+  header {
+    padding: 16px 24px;
+    background: var(--vn-black);
+    color: var(--vn-white);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    border-bottom: 4px solid var(--vn-yellow);
+  }
+  header .brand-lockup { display: flex; align-items: center; gap: 12px; }
+  header h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; color: var(--vn-white); }
+  header h1 .accent { color: var(--vn-yellow); }
+  header .vn-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--vn-pink); display: inline-block; }
+  header .meta { font-size: 12px; color: rgba(255,255,255,0.85); display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  header .meta a { color: var(--vn-yellow); text-decoration: none; font-weight: 600; }
+  header .meta a:hover { text-decoration: underline; }
+  header .meta .sep { opacity: 0.5; }
+
+  .tab-groups {
+    display: flex;
+    border-bottom: 1px solid var(--vn-line);
+    background: var(--vn-white);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    align-items: stretch;
+  }
+  .tab-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 2px solid var(--vn-line);
+  }
+  .tab-group:last-child { border-right: none; }
+  .tab-group-label {
+    background: var(--vn-black);
+    color: var(--vn-yellow);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 6px 14px;
+    text-align: center;
+  }
+  .tabs { display: flex; }
+  .tab {
+    flex: 1;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--vn-muted);
+    border-bottom: 3px solid transparent;
+    user-select: none;
+    transition: color 0.15s, border-color 0.15s;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--vn-ink); }
+  .tab.active { color: var(--vn-black); border-bottom-color: var(--vn-pink); }
+
+  .panel { display: none; padding: 24px; }
+  .panel.active { display: block; }
+
+  h3 { margin: 0 0 10px 0; font-size: 15px; font-weight: 700; }
+  label { display: block; font-weight: 700; margin: 16px 0 5px; font-size: 12px; color: var(--vn-ink); text-transform: uppercase; letter-spacing: 0.4px; }
+  label .note { font-weight: 500; color: var(--vn-muted); font-size: 11px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
+
+  input[type="text"], input[type="date"], input[type="url"], textarea, select {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid var(--vn-line);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--vn-white);
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, input[type="date"]:focus, input[type="url"]:focus, textarea:focus, select:focus {
+    border-color: var(--vn-pink);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255,0,92,0.12);
+  }
+  textarea { min-height: 70px; resize: vertical; }
+
+  .checkboxes {
+    border: 1px solid var(--vn-line);
+    border-radius: 6px;
+    padding: 8px;
+    max-height: 190px;
+    overflow: auto;
+    background: var(--vn-soft);
+  }
+  .checkbox-row { display: flex; align-items: center; gap: 9px; padding: 3px 0; }
+  .checkbox-row input[type="checkbox"] { margin: 0; accent-color: var(--vn-pink); }
+  .checkbox-row label { margin: 0; font-weight: 500; font-size: 13px; display: inline; text-transform: none; letter-spacing: 0; }
+
+  .btn {
+    display: inline-block;
+    padding: 10px 18px;
+    background: var(--vn-black);
+    color: var(--vn-white);
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 10px;
+    margin-right: 6px;
+    font-family: inherit;
+    transition: transform 0.1s, box-shadow 0.15s;
+  }
+  .btn:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--vn-pink); }
+  .btn.primary:hover { background: #e6004f; }
+  .btn.secondary { background: var(--vn-white); color: var(--vn-ink); border: 1px solid var(--vn-line); }
+  .btn.secondary:hover { background: var(--vn-panel); }
+  .btn.accent { background: var(--vn-yellow); color: var(--vn-black); }
+  .btn.accent:hover { background: #ffb300; }
+  .btn:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
+
+  .level-picker { margin-bottom: 16px; padding: 12px 14px; background: var(--vn-panel); border-radius: 6px; border-left: 4px solid var(--vn-orange); }
+  .level-picker strong { text-transform: uppercase; letter-spacing: 0.4px; font-size: 12px; font-weight: 700; }
+  .level-picker label { display: inline-block; margin: 0 20px 0 0; font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 13px; }
+  .level-picker input[type="radio"] { accent-color: var(--vn-pink); }
+
+  .result-box {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--vn-black);
+    color: var(--vn-yellow);
+    border-radius: 6px;
+    max-height: 380px;
+    overflow: auto;
+    font-family: "SF Mono", Consolas, "Courier New", monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+  }
+  .status-bar { margin-top: 10px; font-size: 12px; color: var(--vn-muted); }
+  .pass { color: var(--vn-pass-fg); font-weight: 700; }
+  .fail { color: var(--vn-fail-fg); font-weight: 700; }
+
+  .qa-row {
+    padding: 10px 12px;
+    border: 1px solid var(--vn-line);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: var(--vn-white);
+  }
+  .qa-row.fail { border-left: 4px solid var(--vn-fail-fg); }
+  .qa-row.pass { border-left: 4px solid var(--vn-pass-fg); }
+  .qa-name { font-family: "SF Mono", Consolas, monospace; font-size: 12px; word-break: break-word; color: var(--vn-ink); }
+  .qa-issues { margin-top: 5px; font-size: 12px; color: var(--vn-fail-fg); }
+  .qa-issues li { margin-left: 18px; }
+
+  .hint { font-size: 11px; color: var(--vn-muted); font-style: italic; margin-top: 3px; }
+  .banner-hint {
+    padding: 10px 12px;
+    background: var(--vn-warn-bg);
+    border-left: 4px solid var(--vn-yellow);
+    border-radius: 4px;
+    color: var(--vn-warn-fg);
+    font-style: normal;
+    font-size: 13px;
+  }
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--vn-line); border-top-color: var(--vn-pink); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .field-actions {
+    float: right;
+    font-size: 11px;
+    color: var(--vn-pink);
+    cursor: pointer;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .field-actions:hover { background: rgba(255,0,92,0.08); }
+  .field-actions + .field-actions { margin-left: 8px; }
+
+  .toggle-pill {
+    display: inline-flex;
+    background: var(--vn-panel);
+    border: 1px solid var(--vn-line);
+    border-radius: 20px;
+    padding: 3px;
+    gap: 2px;
+    margin-bottom: 6px;
+  }
+  .toggle-pill label {
+    margin: 0;
+    padding: 5px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--vn-muted);
+    cursor: pointer;
+    border-radius: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .toggle-pill input[type="radio"] { display: none; }
+  .toggle-pill input[type="radio"]:checked + label { background: var(--vn-black); color: var(--vn-white); }
+
+  .vn-badge { display: inline-block; padding: 2px 8px; background: var(--vn-yellow); color: var(--vn-black); border-radius: 10px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; margin-left: 6px; }
+
+  #gen-results, #qa-results, #bulk-results { margin-top: 10px; }
+
+  /* ---------- Numbered grid layout for form fields ---------- */
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 4px;
+  }
+  .field-cell {
+    background: var(--vn-white);
+    border: 1px solid var(--vn-line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field-cell.wide  { grid-column: 1 / -1; }
+  .field-cell.dbl   { grid-column: span 2; }
+  .field-cell:focus-within { border-color: var(--vn-pink); box-shadow: 0 0 0 2px rgba(255,0,92,0.08); }
+  .field-cell .field-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .field-cell .field-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 11px;
+    background: var(--vn-black);
+    color: var(--vn-yellow);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+  .field-cell .field-label {
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--vn-ink);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .field-cell .field-note { display: block; font-weight: 500; color: var(--vn-muted); font-size: 11px; text-transform: none; letter-spacing: 0; margin-top: 2px; }
+  .field-cell input[type="text"], .field-cell input[type="date"], .field-cell input[type="url"], .field-cell textarea, .field-cell select {
+    margin-top: 2px;
+  }
+  .field-cell .checkboxes { margin-top: 2px; }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 0 0 0;
+    border-top: 1px solid var(--vn-line);
+    margin-top: 20px;
+  }
+  .form-actions .btn { margin-top: 0; }
+
+  /* ---------- Bulk edit change-row styling ---------- */
+  .bulk-change-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .bulk-change-row .remove-btn {
+    background: transparent;
+    color: var(--vn-fail-fg);
+    border: 1px solid var(--vn-line);
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .bulk-change-row .remove-btn:hover { background: var(--vn-fail-bg); }
+  .bulk-inline-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--vn-muted);
+    margin-bottom: 4px;
+  }
+  .bulk-field-value-host .ms-wrap { margin-bottom: 2px; }
+
+  .section-divider {
+    margin: 24px 0 12px 0;
+    padding-top: 16px;
+    border-top: 2px solid var(--vn-line);
+  }
+  .section-divider h3 { margin-bottom: 4px; }
+  .section-divider .hint { margin-top: 0; }
+
+  /* ---------- Cross-level inheritance row ---------- */
+  .inherit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--vn-warn-bg);
+    border-radius: 4px;
+    margin: 4px 0 8px 0;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .inherit-row input[type="checkbox"] { accent-color: var(--vn-orange); margin: 0; }
+  .inherit-row label { margin: 0; font-weight: 500; font-size: 12px; text-transform: none; letter-spacing: 0; color: var(--vn-warn-fg); }
+  .inherit-row label strong { color: var(--vn-ink); font-weight: 700; }
+  .inherit-row .preview { color: var(--vn-muted); font-style: italic; }
+  .field-cell.inherited { background: #FFFEF5; border-color: var(--vn-yellow); }
+  .field-cell.inherited input:disabled, .field-cell.inherited textarea:disabled, .field-cell.inherited select:disabled { opacity: 0.75; background: var(--vn-panel); }
+
+  /* Pair checkbox — sits below the textarea / dropdown to opt this field
+     into "row-aligned" mode (zip with other paired fields, no cartesian). */
+  .pair-toggle {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--vn-ink);
+    user-select: none;
+    background: var(--vn-soft);
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px dashed var(--vn-line);
+    cursor: pointer;
+  }
+  .pair-toggle input[type="checkbox"] { margin: 0; cursor: pointer; }
+  .pair-toggle.active {
+    background: rgba(255, 0, 92, 0.06);
+    border-color: var(--vn-pink);
+    color: var(--vn-pink);
+    font-weight: 700;
+  }
+  .pair-toggle .pair-toggle-label { letter-spacing: 0.2px; }
+  .pair-toggle .pair-toggle-hint { color: var(--vn-muted); font-weight: 400; font-style: italic; margin-left: 4px; }
+
+  /* ---------- Multi-date picker list ---------- */
+  .date-picker-list { display: flex; flex-direction: column; gap: 6px; }
+  .date-picker-row { display: flex; align-items: center; gap: 6px; }
+  .date-picker-row input[type="date"] { flex: 1; }
+  .remove-date-btn {
+    background: transparent;
+    color: var(--vn-fail-fg);
+    border: 1px solid var(--vn-line);
+    border-radius: 4px;
+    width: 30px; height: 30px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    font-family: inherit;
+    padding: 0;
+  }
+  .remove-date-btn:hover { background: var(--vn-fail-bg); border-color: var(--vn-fail-fg); }
+  .add-date-btn {
+    background: transparent;
+    color: var(--vn-pink);
+    border: 1px dashed var(--vn-line);
+    border-radius: 4px;
+    padding: 6px 12px;
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .add-date-btn:hover { background: rgba(255,0,92,0.06); border-color: var(--vn-pink); }
+
+  /* ---------- UTM Builder: implementation-instructions callout ---------- */
+  .utm-instr-box {
+    margin-top: 12px;
+    margin-bottom: 4px;
+    padding: 14px 16px;
+    background: #FFF7D6;          /* warm yellow */
+    border: 2px solid var(--vn-yellow);
+    border-radius: 8px;
+    color: var(--vn-black);
+    font-size: 13px;
+    line-height: 1.5;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+  .utm-instr-box .utm-instr-title {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 12px;
+    color: var(--vn-black);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .utm-instr-box .utm-instr-title::before {
+    content: "★";
+    color: var(--vn-pink);
+    font-size: 14px;
+  }
+  .utm-instr-box .utm-instr-platform { color: var(--vn-pink); }
+  .utm-instr-box code {
+    background: rgba(0,0,0,0.06);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 12px;
+  }
+  .utm-instr-box .utm-instr-screenshot {
+    margin-top: 10px;
+    padding: 8px;
+    background: var(--vn-white);
+    border: 1px solid var(--vn-line);
+    border-radius: 6px;
+    text-align: center;
+  }
+  .utm-instr-box .utm-instr-screenshot img {
+    max-width: 100%;
+    max-height: 420px;
+    border-radius: 4px;
+    display: block;
+    margin: 0 auto;
+  }
+  .utm-instr-box .utm-instr-screenshot-caption {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--vn-muted);
+    font-style: italic;
+  }
+  .utm-instr-box .utm-instr-screenshot-empty {
+    padding: 14px;
+    color: var(--vn-muted);
+    font-size: 12px;
+    font-style: italic;
+    background: var(--vn-soft);
+    border-radius: 4px;
+    text-align: center;
+  }
+  .utm-multi-platform-note {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #FFEFD9;
+    border-left: 4px solid var(--vn-orange);
+    border-radius: 4px;
+    color: var(--vn-black);
+    font-size: 13px;
+  }
+
+  /* ---------- UTM Builder: bulk URL list (one row per pasted URL) ---------- */
+  .url-list-wrap { margin-top: 8px; }
+  .url-list-row {
+    display: grid;
+    grid-template-columns: 30px 1fr 200px 30px;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    border: 1px solid var(--vn-line);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    background: var(--vn-white);
+  }
+  .url-list-row .url-row-num {
+    font-weight: 700;
+    color: var(--vn-muted);
+    text-align: center;
+    font-size: 12px;
+  }
+  .url-list-row input[type="url"] {
+    width: 100%;
+    padding: 7px 9px;
+    border: 1px solid var(--vn-line);
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: "SF Mono", Consolas, monospace;
+  }
+  .url-list-row select {
+    width: 100%;
+    padding: 7px 8px;
+    border: 1px solid var(--vn-line);
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .url-list-row .url-row-remove {
+    background: transparent;
+    border: none;
+    color: var(--vn-muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+  }
+  .url-list-row .url-row-remove:hover { color: var(--vn-pink); }
+
+  /* ---------- UTM Builder output table ---------- */
+  .utm-table-wrap { overflow-x: auto; margin-top: 12px; border: 1px solid var(--vn-line); border-radius: 6px; background: var(--vn-white); }
+  .utm-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .utm-table thead th {
+    background: var(--vn-black);
+    color: var(--vn-yellow);
+    text-align: left;
+    padding: 8px 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-size: 11px;
+    white-space: nowrap;
+    position: sticky; top: 0; z-index: 1;
+  }
+  .utm-table td {
+    padding: 8px 10px;
+    border-top: 1px solid var(--vn-line);
+    vertical-align: middle;
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 11px;
+    white-space: nowrap;          /* no wrapping — table scrolls horizontally instead */
+    line-height: 1.4;
+  }
+  .utm-table th { white-space: nowrap; }
+  .utm-table tr:hover td { background: var(--vn-soft); }
+  .utm-table td.status-cell { font-family: inherit; font-weight: 700; white-space: nowrap; text-align: center; }
+  .utm-table td.status-cell.live { background: var(--vn-pass-bg); color: var(--vn-pass-fg); }
+  .utm-table td.status-cell.dead { background: var(--vn-fail-bg); color: var(--vn-fail-fg); }
+  .utm-table td.status-cell.err  { background: var(--vn-fail-bg); color: var(--vn-fail-fg); }
+  .utm-table td.col-code { text-align: center; color: var(--vn-muted); white-space: nowrap; }
+  .utm-table td.col-error { color: var(--vn-fail-fg); font-family: inherit; }
+  .utm-table td.col-platform { font-family: inherit; font-weight: 600; }
+  .utm-table td.col-instructions { font-family: inherit; font-size: 11px; }
+  .utm-table td.col-instructions strong { color: var(--vn-pink); }
+  /* Per-field cells flagged with a validation/structure issue render with a
+     red background so users can spot bad values at a glance in the QA table. */
+  .utm-table td.qa-bad-cell {
+    background: var(--vn-fail-bg);
+    color: var(--vn-fail-fg);
+    font-weight: 700;
+  }
+  /* Per-field columns in the Taxonomy QA table get a minimum width so the
+     content stays readable even when many columns are scrolled into view. */
+  .utm-table.qa-fields-table th,
+  .utm-table.qa-fields-table td { min-width: 110px; }
+  /* The "Full Name" column at the end preserves the original pasted taxonomy
+     in one long monospace cell — wider min-width so it doesn't fight the
+     per-field columns for space when the table scrolls. */
+  .utm-table td.qa-full-name { min-width: 480px; color: var(--vn-muted); }
+  /* When a single QA batch mixes P1/P2/P3, the table shows the union of all
+     levels' fields. Cells for fields that don't apply to a given row's level
+     render with a muted dash so the row stays visually anchored to its data. */
+  .utm-table td.qa-na-cell { color: var(--vn-muted); text-align: center; opacity: 0.5; }
+
+  /* ---------- Multi-select dropdown ---------- */
+  .ms-wrap { position: relative; }
+  .ms-button {
+    width: 100%;
+    padding: 9px 32px 9px 11px;
+    border: 1px solid var(--vn-line);
+    border-radius: 6px;
+    background: var(--vn-white);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    min-height: 38px;
+    position: relative;
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ms-button:hover { border-color: var(--vn-ink); }
+  .ms-wrap.open .ms-button { border-color: var(--vn-pink); box-shadow: 0 0 0 2px rgba(255,0,92,0.12); }
+  .ms-button .ms-summary { flex: 1; color: var(--vn-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ms-button .ms-summary.has-values { color: var(--vn-ink); font-weight: 600; }
+  .ms-button .ms-arrow {
+    position: absolute;
+    right: 12px;
+    font-size: 9px;
+    color: var(--vn-muted);
+    transition: transform 0.15s;
+  }
+  .ms-wrap.open .ms-button .ms-arrow { transform: rotate(180deg); color: var(--vn-pink); }
+  .ms-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--vn-white);
+    border: 1px solid var(--vn-line);
+    border-radius: 6px;
+    z-index: 100;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+    max-height: 320px;
+    display: none;
+    flex-direction: column;
+  }
+  .ms-wrap.open .ms-panel { display: flex; }
+  .ms-search {
+    padding: 9px 11px;
+    border: 0;
+    border-bottom: 1px solid var(--vn-line);
+    font-size: 13px;
+    font-family: inherit;
+    width: 100%;
+    outline: none;
+  }
+  .ms-search:focus { background: var(--vn-soft); }
+  .ms-actions {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--vn-line);
+    font-size: 11px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    background: var(--vn-soft);
+  }
+  .ms-actions a {
+    color: var(--vn-pink);
+    cursor: pointer;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .ms-actions a:hover { text-decoration: underline; }
+  .ms-options { overflow-y: auto; padding: 4px 0; flex: 1; }
+  .ms-option {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    min-height: 32px;
+  }
+  .ms-option:hover { background: var(--vn-panel); }
+  .ms-option input[type="checkbox"] { accent-color: var(--vn-pink); margin: 0; flex-shrink: 0; }
+  /* Selection-order badge — appears on each checked option showing the order
+     it was selected in. Critical for the "Pair line-by-line" feature so users
+     know which value goes with which row. */
+  .ms-order-badge {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--vn-pink);
+    color: var(--vn-white);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0;
+    flex-shrink: 0;
+    margin-right: 2px;
+    font-family: inherit;
+  }
+  .ms-option input[type="checkbox"]:checked ~ .ms-order-badge,
+  .ms-option .ms-order-badge.shown { display: inline-flex; }
+  .ms-option label { margin: 0; font-weight: 500; cursor: pointer; flex: 1; text-transform: none; letter-spacing: 0; font-size: 13px; line-height: 1.35; }
+  .ms-option.hidden { display: none; }
+  .ms-option .sku-category { color: var(--vn-muted); font-size: 11px; }
+  .ms-option .sku-name { color: var(--vn-muted); font-size: 11px; display: block; margin-top: 1px; }
+
+  .ms-footer {
+    padding: 8px 10px;
+    border-top: 1px solid var(--vn-line);
+    background: var(--vn-soft);
+    display: flex;
+    justify-content: flex-end;
+  }
+  .ms-done {
+    background: var(--vn-pink);
+    color: var(--vn-white);
+    border: 0;
+    border-radius: 4px;
+    padding: 6px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .ms-done:hover { background: #e6004f; }
+
+  /* disabled state for inheritance-locked fields */
+  .ms-wrap.disabled .ms-button { background: var(--vn-panel); cursor: not-allowed; opacity: 0.75; pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand-lockup">
+    <span class="vn-dot"></span>
+    <h1>Taxonomy <span class="accent">Tools</span></h1>
+  </div>
+  <div class="meta">
+    <span id="spec-status">Loading…</span>
+    <a href="#" id="open-data-sheet" target="_blank" rel="noopener" style="display:none;">Open data sheet ↗</a>
+    <span class="sep">·</span>
+    <a href="#" onclick="refreshSpec(); return false;">Refresh</a>
+  </div>
+</header>
+
+<div class="tab-groups">
+  <div class="tab-group">
+    <div class="tab-group-label">Platform Taxonomy Tools</div>
+    <div class="tabs">
+      <div class="tab active" data-tab="gen">Generator</div>
+      <div class="tab" data-tab="ext">Extractor &amp; Editor</div>
+      <div class="tab" data-tab="qa">Taxonomy QA</div>
+    </div>
+  </div>
+  <div class="tab-group">
+    <div class="tab-group-label">UTM Tools</div>
+    <div class="tabs">
+      <div class="tab" data-tab="url">UTM Builder</div>
+      <div class="tab" data-tab="urlqa">URL QA</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== GENERATOR ===================== -->
+<div class="panel active" id="panel-gen">
+  <div class="level-picker">
+    <strong>Level:</strong>
+    <label><input type="radio" name="gen-level" value="P1" checked> P1 Campaign</label>
+    <label><input type="radio" name="gen-level" value="P2"> P2 Ad Set</label>
+    <label><input type="radio" name="gen-level" value="P3"> P3 Ad Name</label>
+  </div>
+  <div style="font-size: 12px; color: var(--vn-muted); font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 6px;">Input <span style="color:var(--vn-muted); text-transform:none; letter-spacing:0; font-weight:500;">(fields are numbered in output order)</span></div>
+  <div id="gen-fields"></div>
+  <div class="form-actions">
+    <button type="button" class="btn secondary" onclick="clearGenerator()">Clear Form</button>
+    <button type="button" class="btn primary" onclick="runGenerate()">Generate</button>
+  </div>
+  <div class="status-bar" id="gen-status"></div>
+  <div id="gen-results"></div>
+</div>
+
+<!-- ===================== EXTRACTOR & EDITOR ===================== -->
+<div class="panel" id="panel-ext">
+
+  <h3>Single Name — Extract &amp; Rebuild</h3>
+  <div class="hint" style="margin-bottom:8px;">Paste one existing taxonomy name, edit individual fields, and rebuild the revised name.</div>
+
+  <label>Paste an existing taxonomy name<span class="note">(auto-detects level)</span></label>
+  <textarea id="ext-input" placeholder="P#: 52088137795 | VN | Cuisinart | BRD - Single-Serve Coffee (DGB-30) | USA | Traffic | Middle Funnel | ABO | 03/02/26 | 03/31/26 | NA"></textarea>
+  <div class="level-picker" style="margin-top:12px;">
+    <strong>Level (optional override):</strong>
+    <label><input type="radio" name="ext-level" value="" checked> Auto</label>
+    <label><input type="radio" name="ext-level" value="P1"> P1</label>
+    <label><input type="radio" name="ext-level" value="P2"> P2</label>
+    <label><input type="radio" name="ext-level" value="P3"> P3</label>
+  </div>
+  <button type="button" class="btn primary" onclick="runExtract()">Extract</button>
+  <button type="button" class="btn secondary" onclick="resetExtractor()">Reset Extractor</button>
+  <div class="status-bar" id="ext-status"></div>
+  <div id="ext-fields"></div>
+  <div id="ext-rebuild-area" style="display:none; margin-top:14px;">
+    <button type="button" class="btn primary" onclick="runRebuildClient()">Rebuild Name</button>
+    <button type="button" class="btn secondary" onclick="copyExtractedRebuild()">Copy rebuilt</button>
+    <div class="result-box" id="ext-output" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- ---- Bulk Edit ---- -->
+  <div class="section-divider">
+    <h3>Bulk Edit — Apply the Same Change Across Many Names</h3>
+    <div class="hint">Paste a list of existing taxonomy names (any mix of P1 / P2 / P3), pick the field(s) you want to change, and every row gets rebuilt. Use it for common ops like changing dates, updating custom IDs, or swapping campaign names across dozens of ad names at once.</div>
+  </div>
+
+  <label>Paste names to edit <span class="note">(one per line, can be mixed levels)</span></label>
+  <textarea id="bulk-input" style="min-height:110px;" placeholder="Paste one name per line — P1, P2, or P3. Mixed levels are fine."></textarea>
+
+  <label style="margin-top:12px;">Or upload a completed template CSV</label>
+  <input type="file" id="bulk-file" accept=".csv" onchange="handleBulkFile(event)">
+  <div class="hint" id="bulk-file-status"></div>
+  <button type="button" class="btn secondary" style="margin-top:8px;" onclick="downloadBulkTemplate()">Download bulk-edit template</button>
+
+  <label style="margin-top:14px;">Changes to apply to every row <span class="note">(overrides from the uploaded CSV take priority per-row)</span></label>
+  <div id="bulk-changes"></div>
+  <button type="button" class="btn secondary" onclick="addBulkChangeRow()">+ Add change</button>
+
+  <div style="margin-top:14px;">
+    <button type="button" class="btn primary" onclick="runBulkEdit()">Apply bulk edit</button>
+    <button type="button" class="btn secondary" onclick="clearBulk()">Clear</button>
+  </div>
+  <div class="status-bar" id="bulk-status"></div>
+  <div id="bulk-results"></div>
+</div>
+
+<!-- ===================== TAXONOMY QA ===================== -->
+<div class="panel" id="panel-qa">
+  <h3>Taxonomy QA — Validate Existing Taxonomy Names</h3>
+  <div class="hint" style="margin-bottom:10px;">
+    Paste P1 / P2 / P3 names (one per line) or upload a CSV / XLSX. Each name is parsed, the level is auto-detected, and the segments are checked against the spec — missing prefixes, dropdown-value mismatches, date format, funnel/objective mapping, reserved characters, and (for P3) Product SKU + Category integrity are all flagged.
+  </div>
+
+  <label>Paste names to QA <span class="note">(one per line — P1 / P2 / P3 can be mixed)</span></label>
+  <textarea id="qa-input" style="min-height:120px;" placeholder="Paste one name per line. P1/P2/P3 can be mixed — the tool auto-detects each."></textarea>
+
+  <label style="margin-top:14px;">Or upload a CSV or XLSX <span class="note">(each cell = one name)</span></label>
+  <input type="file" id="qa-file" accept=".csv,.xlsx,.xls,.txt" onchange="handleQAFile(event)">
+  <div class="hint" id="qa-file-status"></div>
+
+  <div style="margin-top:12px;">
+    <button type="button" class="btn primary" onclick="runQA()">Run QA</button>
+    <button type="button" class="btn secondary" onclick="clearQA()">Clear</button>
+    <button type="button" class="btn accent" onclick="exportQAToNewFile()" id="qa-export-btn" disabled>Export to new Google Sheet</button>
+    <button type="button" class="btn secondary" onclick="downloadQACsv()" id="qa-csv-btn" disabled>Download CSV</button>
+  </div>
+
+  <div class="status-bar" id="qa-status"></div>
+  <div id="qa-results"></div>
+</div>
+
+<!-- ===================== UTM BUILDER ===================== -->
+<div class="panel" id="panel-url">
+  <h3>UTM Builder — Append UTM Parameters</h3>
+  <div class="hint" style="margin-bottom:10px;">
+    Generate a UTM-tagged destination URL. Product brands (Conair / BaBylissPRO / Cuisinart) use platform-specific fixed templates with dynamic ad-platform tokens. Unique Vacations Inc. uses a lowercase composite campaign built from 10 fields.
+    Every generated URL is also checked for liveness — a red <span class="fail">DEAD</span> flag means the destination didn't respond.
+  </div>
+
+  <div class="field-grid" id="url-form">
+    <div class="field-cell wide">
+      <div class="field-header"><span class="field-num">★</span><span class="field-label">Brand</span></div>
+      <select id="url_brand" onchange="onUrlBrandChange()">
+        <option value="">— pick a brand —</option>
+      </select>
+      <div class="hint" id="url_brand_hint"></div>
+    </div>
+    <div id="url-fields-host" class="field-cell wide" style="display:none;"></div>
+  </div>
+
+  <div class="form-actions">
+    <button type="button" class="btn secondary" onclick="clearUrlBuilder()">Clear</button>
+    <button type="button" class="btn primary" onclick="runUrlBuild()">Build URL</button>
+  </div>
+
+  <div class="status-bar" id="url-status"></div>
+  <div id="url-results"></div>
+</div>
+
+<!-- ===================== URL QA ===================== -->
+<div class="panel" id="panel-urlqa">
+  <h3>URL QA — Validate Existing UTM-Tagged URLs</h3>
+  <div class="hint" style="margin-bottom:10px;">
+    Pick the brand the URLs belong to, then (for product brands) the platform. Each URL is checked against the matching template — missing keys, value mismatches, malformed dynamic tokens, cross-platform mistakes (Meta UTMs on a TikTok ad), and cross-brand mistakes (a Unique Vacations Inc. URL pasted into a Cuisinart QA) are all flagged.
+  </div>
+
+  <label>Brand <span class="note">(required — picks the format: product-template vs Unique Vacations Inc. composite-campaign)</span></label>
+  <select id="url-qa-brand" style="max-width: 320px;" onchange="onUrlQABrandChange()">
+    <option value="">— pick a brand —</option>
+  </select>
+
+  <div id="url-qa-platform-wrap" style="display:none;">
+    <label style="margin-top:14px;">Platform <span class="note">(required for product brands — sets the expected UTM template)</span></label>
+    <select id="url-qa-platform" style="max-width: 320px;">
+      <option value="">— pick a platform —</option>
+    </select>
+  </div>
+
+  <div id="url-qa-utc-hint" class="hint" style="display:none; margin-top:14px; padding:10px 12px; background: var(--vn-soft); border-left: 4px solid var(--vn-pink); border-radius: 4px;">
+    Unique Vacations Inc. URLs use a single composite <code>utm_campaign</code> instead of platform-specific templates, so no platform pick is needed. The validator checks every utm_campaign segment against the formula: <code>viralnation_&lt;funnel&gt;_&lt;campaign&gt;_&lt;geo&gt;_&lt;objective&gt;_&lt;influencer&gt;_&lt;hotel&gt;_&lt;creativeType&gt;_&lt;assetVersion&gt;_&lt;adId&gt;</code>.
+  </div>
+
+  <label style="margin-top:14px;">Paste URLs to QA <span class="note">(one per line — http(s) URLs with appended <code>?utm_*</code> parameters)</span></label>
+  <textarea id="url-qa-input" style="min-height:120px;" placeholder="https://www.cuisinart.com/chefs-classic-stainless-skillet-fp22-24/CSS-22.html?utm_source=meta&utm_medium=paid_social&utm_campaign=120220000&utm_content=120220123&utm_term=120220456"></textarea>
+
+  <label style="margin-top:14px;">Or upload a CSV / XLSX <span class="note">(each cell = one URL)</span></label>
+  <input type="file" id="url-qa-file" accept=".csv,.xlsx,.xls,.txt" onchange="handleUrlQAFile(event)">
+  <div class="hint" id="url-qa-file-status"></div>
+
+  <div style="margin-top:12px;">
+    <button type="button" class="btn primary" onclick="runUrlQA()">Run URL QA</button>
+    <button type="button" class="btn secondary" onclick="clearUrlQA()">Clear</button>
+    <button type="button" class="btn accent" onclick="exportUrlQAToNewFile()" id="url-qa-export-btn" disabled>Export to new Google Sheet</button>
+    <button type="button" class="btn secondary" onclick="downloadUrlQACsv()" id="url-qa-csv-btn" disabled>Download CSV</button>
+  </div>
+
+  <div class="status-bar" id="url-qa-status"></div>
+  <div id="url-qa-results"></div>
+</div>
+
+</div>
+<!-- /.wrap -->
+
+<!-- SheetJS for XLSX upload parsing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let TAXONOMY = null;
+let PRODUCTS = null;
+let BRANDS_FOR_P3 = [];
+let PRODUCT_BRANDS = [];     // brands that use Funding + SKU + Category format
+let DOMAIN_MAPPINGS = null;
+let RESERVED_CHARS = ['|', '~'];
+let extractedValues = null;
+let extractedLevel  = null;
+let qaLastResults   = null;
+let genLastResults  = { level: null, names: [] };
+let genLastInputs   = { P1: null, P2: null, P3: null };  // per-level last-used selections, for inheritance
+let _currentRenderedGenLevel = null;  // tracks which level's fields are currently in the DOM
+
+// ============================================================
+// BOOT
+// ============================================================
+document.querySelectorAll('.tab').forEach(function(t) {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(x){ x.classList.remove('active'); });
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+  });
+});
+document.querySelectorAll('input[name="gen-level"]').forEach(function(r) {
+  r.addEventListener('change', function(e) {
+    // The DOM still shows the OUTGOING level's fields (_currentRenderedGenLevel);
+    // the radio value has already changed to the new one. Read the outgoing
+    // selections explicitly by outgoing level so they don't get lost.
+    try {
+      if (_currentRenderedGenLevel) {
+        const outgoing = readGeneratorSelections(_currentRenderedGenLevel);
+        if (outgoing && outgoing.selections) {
+          genLastInputs[_currentRenderedGenLevel] = outgoing.selections;
+        }
+      }
+    } catch (err) { /* ignore */ }
+    renderGeneratorFields();
+  });
+});
+
+function loadSpec(onLoaded) {
+  document.getElementById('spec-status').textContent = 'Loading spec…';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      TAXONOMY = (res && res.taxonomy) ? res.taxonomy : null;
+      PRODUCTS = (res && res.products) ? res.products : null;
+      BRANDS_FOR_P3 = (res && res.brandsForP3) ? res.brandsForP3 : [];
+      PRODUCT_BRANDS = (res && res.productBrands) ? res.productBrands : ['Conair','BaBylissPRO','Cuisinart'];
+      DOMAIN_MAPPINGS = (res && res.domainMappings) ? res.domainMappings : null;
+      URL_BUILDER = (res && res.urlBuilder) ? res.urlBuilder : null;
+      // Store the banned-char list on the config so renderUrlUtcFields_ can read it
+      if (URL_BUILDER && !URL_BUILDER.utcBannedChars) URL_BUILDER.utcBannedChars = ['?', '&', '#', '=', '/', '\\', '%', '|', '~', '"', "'", '<', '>'];
+      populateUrlBrandPicker();
+      populateUrlQAPlatformPicker();
+      if (res && Array.isArray(res.reservedChars) && res.reservedChars.length) {
+        RESERVED_CHARS = res.reservedChars;
+      }
+      const source = (res && res.source) ? res.source : 'defaults';
+      const skuCount = PRODUCTS ? Object.keys(PRODUCTS.bySku).length : 0;
+      document.getElementById('spec-status').textContent =
+        'Spec: ' + source + (skuCount ? ' (' + skuCount + ' SKUs)' : '');
+      const link = document.getElementById('open-data-sheet');
+      if (res && res.dataSheetUrl) {
+        link.href = res.dataSheetUrl;
+        link.style.display = '';
+      }
+      if (typeof onLoaded === 'function') onLoaded();
+    })
+    .withFailureHandler(function(err) {
+      document.getElementById('spec-status').innerHTML = '<span class="fail">Load failed: ' + escapeHtml(err.message || err) + '</span>';
+    })
+    .getTaxonomyWithSource();
+}
+
+function refreshSpec() {
+  loadSpec(function() {
+    renderGeneratorFields();
+    const extInput = document.getElementById('ext-input');
+    if (extInput && extInput.value && extractedLevel) runExtract();
+  });
+}
+
+// Apps Script injects `google.script.run` via an asynchronously-loaded script,
+// which means top-level `google.script.run` calls can fire before the API is
+// ready (Uncaught ReferenceError: google is not defined). Wait for window.load
+// AND for `google.script.run` to actually be there before calling loadSpec.
+function bootGenerator_() {
+  if (typeof google === 'undefined' || !google.script || !google.script.run) {
+    setTimeout(bootGenerator_, 50);
+    return;
+  }
+  loadSpec(function() { renderGeneratorFields(); });
+}
+if (document.readyState === 'complete') {
+  bootGenerator_();
+} else {
+  window.addEventListener('load', bootGenerator_);
+}
+
+// ============================================================
+// GENERATOR
+// ============================================================
+function renderGeneratorFields() {
+  if (!TAXONOMY) return;
+  const level = document.querySelector('input[name="gen-level"]:checked').value;
+  _currentRenderedGenLevel = level;
+  const fields = TAXONOMY[level].fields;
+  const container = document.getElementById('gen-fields');
+  container.innerHTML = '';
+
+  // P3 brand filter (meta, not in output). Rendered as a wide banner above the grid.
+  if (level === 'P3') {
+    const brandBanner = document.createElement('div');
+    brandBanner.className = 'field-cell wide';
+    brandBanner.style.background = 'var(--vn-panel)';
+    brandBanner.style.borderLeft = '4px solid var(--vn-pink)';
+    const brandsAvailable = BRANDS_FOR_P3 || [];
+    const brandOpts = ['<option value="">— pick a brand —</option>']
+      .concat(brandsAvailable.map(function(b) { return '<option value="' + escapeAttr(b) + '">' + escapeHtml(b) + '</option>'; }))
+      .join('');
+    brandBanner.innerHTML =
+      '<div class="field-header"><span class="field-num" style="background:var(--vn-pink); color:var(--vn-white);">★</span>' +
+      '<span class="field-label">Brand <span class="field-note">(filters Product SKU and resolves URL → Owned domain — not in output)</span></span></div>' +
+      '<select id="gen_p3_brand" onchange="onP3BrandChange()">' + brandOpts + '</select>' +
+      (!PRODUCTS ? '<div class="hint" style="margin-top:4px; color:#8a6d00;">No Products sheet found on the data spreadsheet. Ask an admin to create a "Taxonomy Products" tab.</div>' : '');
+    container.appendChild(brandBanner);
+  }
+
+  // Build the grid of numbered field cells, in output order
+  const grid = document.createElement('div');
+  grid.className = 'field-grid';
+  let numberCounter = 1;
+
+  fields.forEach(function(fld) {
+    if (fld.type === 'auto') return;
+    const num = numberCounter++;
+    const cell = document.createElement('div');
+    cell.className = 'field-cell';
+    cell.setAttribute('data-field-key', fld.key);
+
+    // P3 special fields — some get extra width because they carry more UI
+    if (level === 'P3' && (fld.key === 'productSku' || fld.key === 'domain' || fld.key === 'bodyCopy')) {
+      cell.classList.add('dbl');
+    }
+
+    if (level === 'P3' && fld.key === 'productSku') {
+      cell.innerHTML =
+        fieldHeader_(num, 'Product SKU', '(search by SKU or product name)') +
+        '<div id="gen_productSku_shell">' +
+          '<div class="hint" style="padding:8px 10px; background:var(--vn-panel); border-radius:4px;">Pick a brand above first</div>' +
+        '</div>';
+      grid.appendChild(cell);
+      return;
+    }
+    if (level === 'P3' && fld.key === 'productCat') {
+      cell.innerHTML =
+        fieldHeader_(num, 'Product Category', '(auto-filled from the SKU\'s mapped category)') +
+        '<div id="gen_productCat_display" class="hint" style="padding:8px 10px; background:var(--vn-panel); border-radius:4px; min-height:24px;">' +
+          '<em>Select SKU(s) above to see categories.</em>' +
+        '</div>' +
+        '<div id="gen_productCat_mixed_wrap" style="display:none; margin-top:10px;">' +
+          '<div style="font-size:11px; color:var(--vn-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:4px;">Categories for "Mixed" SKU</div>' +
+          '<div id="gen_productCat_shell"></div>' +
+        '</div>';
+      grid.appendChild(cell);
+      return;
+    }
+    if (level === 'P3' && fld.key === 'domain') {
+      cell.innerHTML =
+        fieldHeader_(num, 'Landing Page Domain', '(enter URL to auto-resolve; SKU extraction will be attempted for Owned domains and any retailer URLs mapped to the Product SKU)') +
+        renderLpDomainFieldBody('gen', fld);
+      grid.appendChild(cell);
+      return;
+    }
+    if (level === 'P3' && fld.key === 'landingPage') {
+      // Non-product-brand landing page — rendered but hidden unless a non-product brand is selected
+      cell.innerHTML =
+        fieldHeader_(num, 'Landing Page', '(free-form label; non-product brands only)') +
+        '<textarea id="gen_landingPage" rows="2" placeholder="One value per line (e.g., Turks Caicos, Sign Up)"></textarea>' +
+        '<div class="hint">Reserved characters ' + RESERVED_CHARS.map(function(c){return '"'+c+'"';}).join(' and ') + ' are not allowed.</div>';
+      grid.appendChild(cell);
+      return;
+    }
+
+    const requiredNote = fld.required ? '' : ' (optional)';
+    const fullNote = (fld.note ? ' · ' + fld.note : '') + requiredNote;
+
+    const inheritHtml = inheritRowHtml(fld, level);
+
+    // The "Pair with row" checkbox — appears on every multi-value field
+    // EXCEPT dates (start/end always pair automatically), auto fields, and
+    // fixed-value fields (e.g., Agency = 'VN').
+    const showPairToggle = (fld.type !== 'date' && fld.type !== 'auto' && fld.type !== 'fixed');
+    const pairToggleHtml = showPairToggle
+      ? ('<label class="pair-toggle" data-pair-key="' + escapeAttr(fld.key) + '">' +
+           '<input type="checkbox" class="gen-pair-cb" data-field="' + escapeAttr(fld.key) + '" onchange="onPairToggleChange(this)">' +
+           '<span class="pair-toggle-label">Pair line-by-line</span>' +
+         '</label>')
+      : '';
+
+    if (fld.type === 'fixed') {
+      // Hardcoded constant — show it as a read-only badge, no input, no pair toggle.
+      cell.innerHTML =
+        fieldHeader_(num, fld.label, ' (fixed)') +
+        '<div style="padding: 9px 11px; border: 1px solid var(--vn-line); border-radius: 6px; background: var(--vn-soft); font-weight: 700; letter-spacing: 0.5px;">' +
+          escapeHtml(fld.value || '') +
+        '</div>' +
+        '<div class="hint" style="margin-top:6px;">Always "' + escapeHtml(fld.value || '') + '" — not editable.</div>';
+      grid.appendChild(cell);
+      return;
+    }
+
+    if (fld.type === 'dropdown') {
+      // For P1 Brand, wire a callback so we can toggle Funding visibility
+      const onChangeFn = (level === 'P1' && fld.key === 'brand') ? 'onP1BrandSelectionChange' : null;
+      cell.innerHTML =
+        fieldHeader_(num, fld.label, fullNote) +
+        inheritHtml +
+        makeMultiSelect('gen_' + fld.key, fld.options, '— select one or more —', onChangeFn) +
+        pairToggleHtml;
+    } else if (fld.type === 'date') {
+      // Multi-value: a stack of native date pickers + an "Add another" button.
+      // Every filled-in row contributes one value; empty rows are ignored.
+      // Start/end dates always pair row-by-row — the i-th start with the i-th end.
+      cell.innerHTML =
+        fieldHeader_(num, fld.label, fullNote) +
+        inheritHtml +
+        '<div class="date-picker-list" id="gen_' + fld.key + '_list">' +
+          '<div class="date-picker-row">' +
+            '<input type="date" class="gen-date-value">' +
+          '</div>' +
+        '</div>' +
+        '<button type="button" class="add-date-btn" onclick="addGenDateRow(\'' + fld.key + '\')">+ Add another date</button>' +
+        '<div class="hint" style="margin-top:6px;">Start and End always pair row-by-row (1st start with 1st end, 2nd with 2nd, etc.). Each (start, end) pair multiplies with all other field combinations — so 3 paired text rows × 2 date pairs = 6 outputs. Start must be on or before End.</div>';
+    } else {
+      // Influencer Handle: strip leading "@" on blur so values stored & displayed
+      // are consistent (e.g. "@username" → "username") regardless of how the user pasted it.
+      const blurAttr = (fld.key === 'influencer') ? ' onblur="stripInfluencerAtSigns(this)"' : '';
+      cell.innerHTML =
+        fieldHeader_(num, fld.label, fullNote) +
+        inheritHtml +
+        '<textarea id="gen_' + fld.key + '" rows="2" placeholder="One value per line — each adds a combination"' + blurAttr + '></textarea>' +
+        (fld.type === 'text' ? '<div class="hint">Reserved characters ' + RESERVED_CHARS.map(function(c){return '"'+c+'"';}).join(' and ') + ' are not allowed in free-text.</div>' : '') +
+        pairToggleHtml;
+    }
+    grid.appendChild(cell);
+  });
+
+  container.appendChild(grid);
+
+  // Set initial show/hide state based on brand type
+  if (level === 'P1') onP1BrandSelectionChange();
+  if (level === 'P3') onP3BrandTypeChange();
+}
+
+/** Visual feedback when a field's "Pair line-by-line" checkbox is toggled. */
+function onPairToggleChange(cb) {
+  const label = cb.closest('.pair-toggle');
+  if (label) label.classList.toggle('active', cb.checked);
+}
+
+function isProductBrandClient(brand) {
+  if (!brand) return false;
+  return (PRODUCT_BRANDS || []).indexOf(String(brand).trim()) !== -1;
+}
+
+/** After any selection in the P1 Brand dropdown, show/hide the Funding card. */
+function onP1BrandSelectionChange() {
+  const fundingCard = document.querySelector('[data-field-key="funding"]');
+  if (!fundingCard) return;
+  const brands = readMultiSelectValues('gen_brand');
+  // If NO brands picked or ANY selected brand is product-based, show Funding
+  const anyProductBrand = brands.length === 0 || brands.some(isProductBrandClient);
+  fundingCard.style.display = anyProductBrand ? '' : 'none';
+  if (!anyProductBrand) {
+    // Clear the funding selection so it doesn't leak into the output
+    setMultiSelectValues('gen_funding', []);
+  }
+}
+
+/** After P3 Brand selector changes, toggle Product SKU/Cat card vs Landing Page card. */
+function onP3BrandTypeChange() {
+  const brand = (document.getElementById('gen_p3_brand') || {}).value || '';
+  const isProduct = isProductBrandClient(brand);
+  const skuCard  = document.querySelector('[data-field-key="productSku"]');
+  const catCard  = document.querySelector('[data-field-key="productCat"]');
+  const lpCard   = document.querySelector('[data-field-key="landingPage"]');
+  if (skuCard) skuCard.style.display = isProduct ? '' : 'none';
+  if (catCard) catCard.style.display = isProduct ? '' : 'none';
+  if (lpCard)  lpCard.style.display  = isProduct ? 'none' : '';
+  if (!isProduct) {
+    // Non-product: clear any SKU/Category selections
+    const skuShell = document.getElementById('gen_productSku_shell');
+    if (skuShell) skuShell.innerHTML = '<div class="hint" style="padding:8px 10px; background:var(--vn-panel); border-radius:4px;">Not applicable for this brand — see Landing Page field.</div>';
+    const catShell = document.getElementById('gen_productCat_shell');
+    if (catShell) catShell.innerHTML = '';
+    const mixedWrap = document.getElementById('gen_productCat_mixed_wrap');
+    if (mixedWrap) mixedWrap.style.display = 'none';
+    const catDisplay = document.getElementById('gen_productCat_display');
+    if (catDisplay) catDisplay.innerHTML = '<em>Not applicable — use Landing Page below.</em>';
+  }
+}
+
+/**
+ * Strip a leading "@" (or run of @s) from each line of an Influencer Handle
+ * field on blur, so the canonical handle is always stored without the prefix.
+ * Works for both single-line inputs (Extractor) and multi-line textareas
+ * (Generator) — single-line input has no "\n", so the loop runs once.
+ */
+function stripInfluencerAtSigns(el) {
+  if (!el) return;
+  const original = el.value || '';
+  const stripped = original.split(/\r?\n/).map(function(line) {
+    return line.replace(/^(\s*)@+/, '$1');
+  }).join('\n');
+  if (stripped !== original) el.value = stripped;
+}
+
+function fieldHeader_(num, label, note) {
+  return '<div class="field-header">' +
+           '<span class="field-num">' + num + '</span>' +
+           '<span class="field-label">' + escapeHtml(label) + (note ? ' <span class="field-note">' + escapeHtml(note) + '</span>' : '') + '</span>' +
+         '</div>';
+}
+
+// ---------- Cross-level inheritance ----------
+const LEVEL_ORDER = ['P1', 'P2', 'P3'];
+
+function nearestPriorLevelWith(fieldKey, currentLevel) {
+  const idx = LEVEL_ORDER.indexOf(currentLevel);
+  for (let i = idx - 1; i >= 0; i--) {
+    const lv = LEVEL_ORDER[i];
+    const stored = genLastInputs[lv] && genLastInputs[lv][fieldKey];
+    if (Array.isArray(stored) && stored.filter(Boolean).length > 0) return lv;
+  }
+  return null;
+}
+
+function previewStoredValues(values) {
+  const arr = (values || []).filter(Boolean);
+  if (arr.length === 0) return '(empty)';
+  if (arr.length === 1) return arr[0];
+  if (arr.length <= 3) return arr.join(', ');
+  return arr.slice(0, 3).join(', ') + ' + ' + (arr.length - 3) + ' more';
+}
+
+/** Return HTML for the inherit checkbox row, or '' if no prior level has data. */
+function inheritRowHtml(fld, currentLevel) {
+  const prior = nearestPriorLevelWith(fld.key, currentLevel);
+  if (!prior) return '';
+  const stored = genLastInputs[prior][fld.key];
+  const id = 'inherit_gen_' + fld.key;
+  return (
+    '<div class="inherit-row">' +
+      '<input type="checkbox" id="' + id + '" data-field="' + escapeAttr(fld.key) + '" data-from="' + prior + '" onchange="onInheritChange(this)">' +
+      '<label for="' + id + '">Use <strong>' + escapeHtml(fld.label) + '</strong> from <strong>' + prior + '</strong> ' +
+        '<span class="preview">(' + escapeHtml(previewStoredValues(stored)) + ')</span>' +
+      '</label>' +
+    '</div>'
+  );
+}
+
+function onInheritChange(cb) {
+  const fieldKey = cb.getAttribute('data-field');
+  const fromLevel = cb.getAttribute('data-from');
+  const level = document.querySelector('input[name="gen-level"]:checked').value;
+  const fld = (TAXONOMY[level].fields || []).find(function(f){ return f.key === fieldKey; });
+  if (!fld) return;
+  const stored = (genLastInputs[fromLevel] || {})[fieldKey] || [];
+  const cell = cb.closest('.field-cell');
+
+  if (cb.checked) {
+    applyValuesToGenField(fld, stored);
+    setGenFieldDisabled(fld, true);
+    if (cell) cell.classList.add('inherited');
+  } else {
+    clearGenField(fld);
+    setGenFieldDisabled(fld, false);
+    if (cell) cell.classList.remove('inherited');
+  }
+}
+
+function applyValuesToGenField(fld, values) {
+  const vals = (values || []).filter(function(v) { return v !== undefined && v !== null && String(v).trim() !== ''; });
+  if (fld.type === 'dropdown') {
+    setMultiSelectValues('gen_' + fld.key, vals);
+  } else if (fld.type === 'date') {
+    // Render one date-picker row per inherited value (minimum one row)
+    const list = document.getElementById('gen_' + fld.key + '_list');
+    if (!list) return;
+    const dateVals = vals.length > 0 ? vals : [''];
+    list.innerHTML = dateVals.map(function(v) {
+      const iso = mdyToIso(v) || (/^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '');
+      return '<div class="date-picker-row">' +
+               '<input type="date" class="gen-date-value" value="' + escapeAttr(iso) + '">' +
+               '<button type="button" class="remove-date-btn" onclick="this.parentNode.remove()">×</button>' +
+             '</div>';
+    }).join('');
+  } else {
+    const el = document.getElementById('gen_' + fld.key);
+    if (el) el.value = vals.join('\n');
+  }
+}
+
+function clearGenField(fld) {
+  if (fld.type === 'dropdown') {
+    setMultiSelectValues('gen_' + fld.key, []);
+  } else if (fld.type === 'date') {
+    const list = document.getElementById('gen_' + fld.key + '_list');
+    if (list) list.innerHTML = '<div class="date-picker-row"><input type="date" class="gen-date-value"></div>';
+  } else {
+    const el = document.getElementById('gen_' + fld.key);
+    if (el) el.value = '';
+  }
+}
+
+function setGenFieldDisabled(fld, disabled) {
+  if (fld.type === 'dropdown') {
+    const wrap = document.getElementById('gen_' + fld.key);
+    if (wrap) {
+      wrap.classList.toggle('disabled', !!disabled);
+      wrap.querySelectorAll('.ms-option input[type="checkbox"]').forEach(function(box) { box.disabled = disabled; });
+      if (disabled) closeMsDropdown(wrap);
+    }
+  } else if (fld.type === 'date') {
+    const list = document.getElementById('gen_' + fld.key + '_list');
+    if (list) list.querySelectorAll('.gen-date-value, .remove-date-btn').forEach(function(el) { el.disabled = disabled; });
+  } else {
+    const el = document.getElementById('gen_' + fld.key);
+    if (el) el.disabled = disabled;
+  }
+}
+
+/** Append an empty date picker row to the Generator's multi-date stack. */
+function addGenDateRow(fieldKey) {
+  const list = document.getElementById('gen_' + fieldKey + '_list');
+  if (!list) return;
+  const row = document.createElement('div');
+  row.className = 'date-picker-row';
+  row.innerHTML =
+    '<input type="date" class="gen-date-value">' +
+    '<button type="button" class="remove-date-btn" onclick="this.parentNode.remove()">×</button>';
+  list.appendChild(row);
+  const newInput = row.querySelector('input[type="date"]');
+  if (newInput) newInput.focus();
+}
+
+// ---------- Reusable multi-select dropdown ----------
+/**
+ * makeMultiSelect(wrapId, options, placeholder, onChange?) -> HTML string
+ * options: array of strings OR {value, label, html, searchTerms, attrs}
+ *   - value:        the option value (string)
+ *   - label:        plain-text label (used for summary)
+ *   - html:         inner HTML for the option (rich rendering e.g. SKU + category)
+ *   - searchTerms:  extra lowercased text for fuzzy search (e.g. product name)
+ *   - attrs:        object of data-* attributes to put on the checkbox
+ *                   (e.g. { category: 'Coffee Maker' } → data-category="Coffee Maker")
+ */
+/**
+ * Reusable collapsible dropdown with search.
+ * `mode` = 'multi' (default) uses checkboxes and keeps the panel open for
+ * multiple picks. `mode` = 'single' enforces one-selection (toggling one box
+ * unchecks others) and auto-closes the panel after a selection.
+ */
+function makeMultiSelect(wrapId, options, placeholder, onChangeFn, mode) {
+  mode = (mode === 'single') ? 'single' : 'multi';
+  const norm = (options || []).map(function(opt) {
+    if (opt && typeof opt === 'object') {
+      return {
+        value: opt.value,
+        label: opt.label != null ? String(opt.label) : String(opt.value),
+        html:  opt.html  != null ? opt.html : escapeHtml(opt.label != null ? opt.label : opt.value),
+        searchTerms: opt.searchTerms || '',
+        attrs: opt.attrs || null
+      };
+    }
+    return { value: String(opt), label: String(opt), html: escapeHtml(String(opt)), searchTerms: '', attrs: null };
+  });
+  const toggleFn = (mode === 'single') ? 'onMsSingleToggle' : 'onMsToggle';
+  const optsHtml = norm.map(function(o) {
+    const dataAttrs = o.attrs ? Object.keys(o.attrs).map(function(k){ return 'data-' + k + '="' + escapeAttr(o.attrs[k] || '') + '"'; }).join(' ') : '';
+    const searchData = (o.label + ' ' + o.value + ' ' + o.searchTerms).toLowerCase();
+    const onChange = onChangeFn ? toggleFn + '(this); ' + onChangeFn + '(this);' : toggleFn + '(this);';
+    // The whole row is clickable (onclick="onMsRowClick(...)") — click anywhere
+    // on the text or background toggles the checkbox. Clicks on the checkbox
+    // itself skip the row handler to avoid double-toggling.
+    return '<div class="ms-option" data-search="' + escapeAttr(searchData) + '" onclick="onMsRowClick(this, event)">' +
+             '<input type="checkbox" value="' + escapeAttr(o.value) + '" ' + dataAttrs + ' onchange="' + onChange + '">' +
+             '<label>' + o.html + '</label>' +
+           '</div>';
+  }).join('');
+
+  const actionsHtml = (mode === 'single')
+    ? '<div class="ms-actions">' +
+        '<a onclick="msToggleAll(this, false)">Clear</a>' +
+        '<span class="ms-count" style="margin-left:auto; color:var(--vn-muted); font-weight:500; text-transform:none; letter-spacing:0;">0 selected</span>' +
+      '</div>'
+    : '<div class="ms-actions">' +
+        '<a onclick="msToggleAll(this, true)">Select all (visible)</a>' +
+        '<a onclick="msToggleAll(this, false)">Clear</a>' +
+        '<span class="ms-count" style="margin-left:auto; color:var(--vn-muted); font-weight:500; text-transform:none; letter-spacing:0;">0 selected</span>' +
+      '</div>';
+
+  const placeholderText = placeholder || (mode === 'single' ? '— pick a value —' : '— select one or more —');
+
+  return (
+    '<div class="ms-wrap" id="' + wrapId + '" data-mode="' + mode + '">' +
+      '<div class="ms-button" onclick="toggleMsDropdown(this)">' +
+        '<span class="ms-summary">' + escapeHtml(placeholderText) + '</span>' +
+        '<span class="ms-arrow">▼</span>' +
+      '</div>' +
+      '<div class="ms-panel">' +
+        '<input type="text" class="ms-search" placeholder="Search…" oninput="filterMsOptions(this)">' +
+        actionsHtml +
+        '<div class="ms-options">' + optsHtml + '</div>' +
+        '<div class="ms-footer">' +
+          '<button type="button" class="ms-done" onclick="msDone(this)">Done</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+/** Clicking anywhere on a .ms-option row toggles the contained checkbox.
+ *  Skips if the click already hit the checkbox itself (avoids double-toggle).
+ *  Also skips if the checkbox is disabled (e.g. inheritance-locked). */
+function onMsRowClick(rowDiv, event) {
+  if (!rowDiv || !event) return;
+  if (event.target && event.target.tagName === 'INPUT') return; // native click on checkbox — let it handle itself
+  const cb = rowDiv.querySelector('input[type="checkbox"]');
+  if (!cb || cb.disabled) return;
+  cb.checked = !cb.checked;
+  cb.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+/** Single-select toggle: ticking one box unchecks the others, then auto-close. */
+function onMsSingleToggle(cb) {
+  const wrap = cb.closest('.ms-wrap');
+  if (!wrap) return;
+  if (cb.checked) {
+    wrap.querySelectorAll('.ms-option input[type="checkbox"]').forEach(function(other) {
+      if (other !== cb) other.checked = false;
+    });
+  }
+  updateMsSummary(wrap);
+  if (cb.checked) setTimeout(function() { wrap.classList.remove('open'); }, 120);
+}
+
+function msDone(btn) {
+  const wrap = btn.closest('.ms-wrap');
+  if (wrap) wrap.classList.remove('open');
+}
+
+function toggleMsDropdown(btn) {
+  const wrap = btn.closest('.ms-wrap');
+  if (!wrap || wrap.classList.contains('disabled')) return;
+  const wasOpen = wrap.classList.contains('open');
+  closeAllMsDropdowns();
+  if (!wasOpen) {
+    wrap.classList.add('open');
+    const search = wrap.querySelector('.ms-search');
+    if (search) { search.value = ''; filterMsOptions(search); setTimeout(function(){ search.focus(); }, 50); }
+  }
+}
+
+function closeMsDropdown(wrap) { if (wrap) wrap.classList.remove('open'); }
+
+function closeAllMsDropdowns() {
+  document.querySelectorAll('.ms-wrap.open').forEach(function(w) { w.classList.remove('open'); });
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.ms-wrap')) closeAllMsDropdowns();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeAllMsDropdowns();
+});
+
+function filterMsOptions(input) {
+  const wrap = input.closest('.ms-wrap');
+  if (!wrap) return;
+  const q = (input.value || '').toLowerCase().trim();
+  wrap.querySelectorAll('.ms-option').forEach(function(opt) {
+    if (!q) { opt.classList.remove('hidden'); return; }
+    const txt = opt.getAttribute('data-search') || opt.textContent.toLowerCase();
+    opt.classList.toggle('hidden', txt.indexOf(q) === -1);
+  });
+}
+
+function msToggleAll(link, on) {
+  const wrap = link.closest('.ms-wrap');
+  if (!wrap) return;
+  wrap.querySelectorAll('.ms-option:not(.hidden) input[type="checkbox"]:not(:disabled)').forEach(function(cb) {
+    if (cb.checked !== on) { cb.checked = on; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+  });
+  updateMsSummary(wrap);
+}
+
+// ---- Multi-select selection-order tracking ----
+// We persist the order each option was checked in so users can see (and the
+// backend can receive) values in selection order, not list order. The order
+// lives as a JSON-encoded data-order attribute on the .ms-wrap element.
+function getMsOrder_(wrap) {
+  try { return JSON.parse(wrap.getAttribute('data-order') || '[]'); }
+  catch (e) { return []; }
+}
+function setMsOrder_(wrap, order) {
+  wrap.setAttribute('data-order', JSON.stringify(order || []));
+}
+/** Reconcile the stored order with the actual checked state of the checkboxes.
+ *  Drops anything no longer checked, appends newly-checked items not yet in
+ *  the order. Returns the cleaned order. */
+function syncMsOrder_(wrap) {
+  const order = getMsOrder_(wrap);
+  const checkedVals = Array.from(wrap.querySelectorAll('.ms-option input[type="checkbox"]:checked')).map(function(cb){ return cb.value; });
+  const checkedSet = {}; checkedVals.forEach(function(v){ checkedSet[v] = true; });
+  const cleaned = order.filter(function(v){ return checkedSet[v]; });
+  checkedVals.forEach(function(v){ if (cleaned.indexOf(v) === -1) cleaned.push(v); });
+  setMsOrder_(wrap, cleaned);
+  return cleaned;
+}
+/** Write/refresh the visible numeric badges on each option. */
+function refreshMsOrderBadges_(wrap) {
+  const order = syncMsOrder_(wrap);
+  const indexFor = {}; order.forEach(function(v, i){ indexFor[v] = i + 1; });
+  wrap.querySelectorAll('.ms-option').forEach(function(opt) {
+    const cb = opt.querySelector('input[type="checkbox"]');
+    if (!cb) return;
+    let badge = opt.querySelector('.ms-order-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'ms-order-badge';
+      // Insert AFTER the checkbox so the layout reads: [☑] [1] label
+      if (cb.nextSibling) opt.insertBefore(badge, cb.nextSibling);
+      else opt.appendChild(badge);
+    }
+    if (cb.checked && indexFor[cb.value]) {
+      badge.textContent = String(indexFor[cb.value]);
+      badge.classList.add('shown');
+    } else {
+      badge.textContent = '';
+      badge.classList.remove('shown');
+    }
+  });
+}
+
+function onMsToggle(cb) {
+  const wrap = cb.closest('.ms-wrap');
+  if (!wrap) return;
+  const order = getMsOrder_(wrap);
+  const idx = order.indexOf(cb.value);
+  if (cb.checked) {
+    if (idx === -1) order.push(cb.value);
+  } else {
+    if (idx !== -1) order.splice(idx, 1);
+  }
+  setMsOrder_(wrap, order);
+  updateMsSummary(wrap);
+}
+
+function updateMsSummary(wrap) {
+  const order = syncMsOrder_(wrap);
+  const summary = wrap.querySelector('.ms-summary');
+  const count   = wrap.querySelector('.ms-count');
+  if (order.length === 0) {
+    summary.textContent = '— select one or more —';
+    summary.classList.remove('has-values');
+  } else if (order.length === 1) {
+    summary.textContent = order[0];
+    summary.classList.add('has-values');
+  } else {
+    summary.textContent = order[0] + '  +  ' + (order.length - 1) + ' more';
+    summary.classList.add('has-values');
+  }
+  if (count) count.textContent = order.length + ' selected';
+  refreshMsOrderBadges_(wrap);
+}
+
+function readMultiSelectValues(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return [];
+  // Return values in selection order (first-clicked is first), with any
+  // out-of-band-checked values appended at the end.
+  return syncMsOrder_(wrap);
+}
+
+function setMultiSelectValues(wrapId, values) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  const valueArr = (values || []).map(function(v){ return String(v); });
+  const set = {}; valueArr.forEach(function(v){ set[v] = true; });
+  wrap.querySelectorAll('.ms-option input[type="checkbox"]').forEach(function(cb) {
+    cb.checked = !!set[cb.value];
+  });
+  // The provided order IS the selection order
+  setMsOrder_(wrap, valueArr);
+  updateMsSummary(wrap);
+}
+
+function renderLpDomainFieldBody(prefix, fld) {
+  const opts = fld.options || [];
+  return (
+    '<div class="toggle-pill">' +
+      '<input type="radio" name="' + prefix + '_domain_mode" id="' + prefix + '_domain_mode_url" value="url" checked onchange="onLpDomainModeChange(\'' + prefix + '\')">' +
+      '<label for="' + prefix + '_domain_mode_url">Enter URL</label>' +
+      '<input type="radio" name="' + prefix + '_domain_mode" id="' + prefix + '_domain_mode_list" value="list" onchange="onLpDomainModeChange(\'' + prefix + '\')">' +
+      '<label for="' + prefix + '_domain_mode_list">Select from list</label>' +
+    '</div>' +
+    '<div id="' + prefix + '_domain_url_wrap">' +
+      '<input type="url" id="' + prefix + '_domain_url" placeholder="https://www.cuisinart.com/.../DGB-30.html" oninput="onLpDomainUrlInput(\'' + prefix + '\')">' +
+      '<div class="hint" id="' + prefix + '_domain_url_status">Paste a destination URL — the LP Domain value auto-resolves. We also try to extract the Product SKU from the path.</div>' +
+    '</div>' +
+    '<div id="' + prefix + '_domain_list_wrap" style="display:none;">' +
+      makeMultiSelect(prefix + '_domain', opts, '— select landing-page domain(s) —') +
+    '</div>'
+  );
+}
+
+// ---------- Landing Page Domain (URL-entry mode + list mode) ----------
+function onLpDomainModeChange(prefix) {
+  const mode = (document.querySelector('input[name="' + prefix + '_domain_mode"]:checked') || {}).value || 'url';
+  const urlWrap  = document.getElementById(prefix + '_domain_url_wrap');
+  const listWrap = document.getElementById(prefix + '_domain_list_wrap');
+  if (urlWrap)  urlWrap.style.display  = (mode === 'url')  ? '' : 'none';
+  if (listWrap) listWrap.style.display = (mode === 'list') ? '' : 'none';
+}
+
+function resolveUrlToDomain(rawUrl, brand) {
+  if (!rawUrl) return null;
+  let host = '';
+  try {
+    const u = new URL(rawUrl.indexOf('://') === -1 ? 'https://' + rawUrl : rawUrl);
+    host = u.hostname.toLowerCase().replace(/^www\./, '');
+  } catch (e) {
+    const m = rawUrl.toLowerCase().match(/([a-z0-9-]+\.[a-z0-9.-]+)/);
+    host = m ? m[1].replace(/^www\./, '') : '';
+  }
+  if (!host) return null;
+  if (!DOMAIN_MAPPINGS || DOMAIN_MAPPINGS.length === 0) return null;
+  for (let i = 0; i < DOMAIN_MAPPINGS.length; i++) {
+    const rule = DOMAIN_MAPPINGS[i];
+    if (!rule.pattern) continue;
+    if (host === rule.pattern || host.endsWith('.' + rule.pattern) || host.indexOf(rule.pattern) !== -1) {
+      if (!rule.brand || rule.brand === brand) return rule.lpValue;
+    }
+  }
+  return null;
+}
+
+function onLpDomainUrlInput(prefix) {
+  const raw = (document.getElementById(prefix + '_domain_url') || {}).value || '';
+  const brand = prefix === 'gen'
+    ? ((document.getElementById('gen_p3_brand') || {}).value || '')
+    : ((document.getElementById('ext_p3_brand') || {}).value || '');
+  const status = document.getElementById(prefix + '_domain_url_status');
+  if (!raw.trim()) {
+    if (status) status.textContent = 'Paste a destination URL — the LP Domain value auto-resolves. We also try to extract the Product SKU from the path.';
+    return;
+  }
+  const resolved = resolveUrlToDomain(raw, brand);
+
+  let html = '';
+  if (resolved) html += '<span class="pass">Detected domain:</span> <strong>' + escapeHtml(resolved) + '</strong>';
+  else          html += '<span class="fail">No Domain Map rule matched</span> — switch to "Select from list" or add a rule in the Domain Map sheet.';
+  if (brand) html += ' <span class="hint">(brand: ' + escapeHtml(brand) + ')</span>';
+
+  // Two paths for SKU extraction:
+  //   1. Owned (brand) URLs — match the path's tail token against known SKUs.
+  //   2. Retailer URLs (Amazon / Walmart / Target / etc.) — match the full URL
+  //      against the per-SKU "Retailer URLs" mapping in the Products sheet.
+  if (resolved === 'Owned') {
+    const skuInfo = extractAndMatchSkuFromUrl(raw, brand);
+    if (skuInfo.candidate) {
+      if (skuInfo.matched) {
+        html += '<br><span class="pass">Detected SKU:</span> <strong>' + escapeHtml(skuInfo.matched) + '</strong>' +
+                (skuInfo.productName ? ' <span class="hint">(' + escapeHtml(skuInfo.productName) + ')</span>' : '') +
+                ' — <a href="#" onclick="applyUrlSku(\'' + prefix + '\', \'' + escapeAttr(skuInfo.matched) + '\'); return false;">use this SKU</a>';
+      } else {
+        html += '<br><span class="fail">Extracted "' + escapeHtml(skuInfo.candidate) + '" from the URL, but it\'s not in the Products sheet for brand "' + escapeHtml(brand || '(none selected)') + '".</span>';
+      }
+    }
+  } else if (resolved) {
+    // Retailer URL — try the per-SKU retailer URL mapping (silently; the
+    // UI doesn't broadly advertise retailer-URL extraction to users since
+    // mapping coverage is partial. If a stored mapping happens to match,
+    // show the SKU; otherwise just hint that the user should pick manually.)
+    const skuInfo = matchSkuByRetailerUrl(raw, brand);
+    if (skuInfo) {
+      html += '<br><span class="pass">Detected SKU:</span> <strong>' + escapeHtml(skuInfo.sku) + '</strong>' +
+              (skuInfo.name ? ' <span class="hint">(' + escapeHtml(skuInfo.name) + ')</span>' : '') +
+              ' — <a href="#" onclick="applyUrlSku(\'' + prefix + '\', \'' + escapeAttr(skuInfo.sku) + '\'); return false;">use this SKU</a>';
+    } else {
+      html += '<br><span class="hint">No SKU mapping found for this retailer URL — pick the Product SKU manually below.</span>';
+    }
+  }
+  if (status) status.innerHTML = html;
+}
+
+/**
+ * Match an input URL against the per-SKU "Retailer URLs" column in the
+ * Products sheet. Returns the matched product { sku, category, name, brand }
+ * or null if no mapping exists.
+ *
+ * Match logic: hostname + path-prefix comparison, after both URLs are
+ * normalized (protocol stripped, www. removed, trailing slash trimmed,
+ * query/fragment dropped). A stored URL like "amazon.com/dp/B0123" matches
+ * any input URL that shares that hostname and has a path starting with /dp/B0123,
+ * which handles tracking parameters and ref tails like "?ref=xyz".
+ */
+function matchSkuByRetailerUrl(rawUrl, brand) {
+  if (!rawUrl || !PRODUCTS) return null;
+  const inputNorm = normalizeRetailerUrl_(rawUrl);
+  if (!inputNorm) return null;
+
+  // Search the brand's products first (more precise); fall back to all brands.
+  const candidatePools = [];
+  if (brand && PRODUCTS.byBrand && PRODUCTS.byBrand[brand]) {
+    candidatePools.push({ items: PRODUCTS.byBrand[brand], brand: brand });
+  } else if (PRODUCTS.byBrand) {
+    Object.keys(PRODUCTS.byBrand).forEach(function(b) {
+      candidatePools.push({ items: PRODUCTS.byBrand[b], brand: b });
+    });
+  }
+
+  for (let p = 0; p < candidatePools.length; p++) {
+    const pool = candidatePools[p];
+    for (let i = 0; i < pool.items.length; i++) {
+      const item = pool.items[i];
+      const urls = item.retailerUrls || [];
+      for (let j = 0; j < urls.length; j++) {
+        const storedNorm = normalizeRetailerUrl_(urls[j]);
+        if (!storedNorm) continue;
+        if (inputNorm === storedNorm
+            || inputNorm.indexOf(storedNorm) === 0
+            || storedNorm.indexOf(inputNorm) === 0) {
+          return {
+            sku: item.sku,
+            category: item.category,
+            name: item.name,
+            brand: pool.brand
+          };
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/** Normalize a URL for retailer-URL comparison — lowercase, strip protocol,
+ *  www., trailing slashes, query, and fragment. Returns just hostname+pathname
+ *  or null if the input doesn't look URL-shaped. */
+function normalizeRetailerUrl_(url) {
+  let s = String(url || '').trim().toLowerCase();
+  if (!s) return null;
+  s = s.replace(/^https?:\/\//, '');
+  s = s.replace(/^www\./, '');
+  s = s.split('?')[0].split('#')[0];
+  s = s.replace(/\/+$/, '');
+  if (!s || s.indexOf('.') === -1) return null;  // no hostname → garbage
+  return s;
+}
+
+/**
+ * Extract a SKU candidate from the URL's last path segment, then try to match
+ * it against known SKUs in the selected brand's product list.
+ * Matching: exact, case-insensitive, or substring (for variants like
+ * AIR-200NAS vs AIR-200).
+ *
+ * NOTE: Caller gates this to Owned-domain URLs only — retailer URLs contain
+ * retailer-specific product IDs that won't match brand SKUs.
+ */
+function extractAndMatchSkuFromUrl(rawUrl, brand) {
+  const out = { candidate: '', matched: '', productName: '' };
+  if (!rawUrl) return out;
+
+  let pathname = '';
+  try {
+    const u = new URL(rawUrl.indexOf('://') === -1 ? 'https://' + rawUrl : rawUrl);
+    pathname = decodeURIComponent(u.pathname || '');
+  } catch (e) {
+    return out;
+  }
+  if (!pathname) return out;
+
+  const cleaned = pathname.replace(/\.(html?|php|aspx?)$/i, '');
+  const segments = cleaned.split('/').filter(Boolean);
+  if (segments.length === 0) return out;
+  const candidate = segments[segments.length - 1].trim();
+  out.candidate = candidate;
+
+  if (!candidate || !PRODUCTS || !PRODUCTS.byBrand) return out;
+  const brands = brand ? [brand] : Object.keys(PRODUCTS.byBrand);
+  const lowerCand = candidate.toLowerCase();
+
+  for (let i = 0; i < brands.length; i++) {
+    const items = PRODUCTS.byBrand[brands[i]] || [];
+    // 1. Exact match
+    for (let j = 0; j < items.length; j++) {
+      if (items[j].sku === candidate) { out.matched = items[j].sku; out.productName = items[j].name || ''; return out; }
+    }
+    // 2. Case-insensitive exact
+    for (let j = 0; j < items.length; j++) {
+      if (String(items[j].sku).toLowerCase() === lowerCand) { out.matched = items[j].sku; out.productName = items[j].name || ''; return out; }
+    }
+    // 3. Candidate starts with a known SKU (e.g., AIR-200NAS starts with AIR-200)
+    for (let j = 0; j < items.length; j++) {
+      const sku = String(items[j].sku);
+      if (sku.toLowerCase() !== 'mixed' && lowerCand.indexOf(sku.toLowerCase()) === 0) {
+        out.matched = sku; out.productName = items[j].name || ''; return out;
+      }
+    }
+    // 4. Known SKU appears anywhere in the candidate
+    for (let j = 0; j < items.length; j++) {
+      const sku = String(items[j].sku);
+      if (sku.toLowerCase() !== 'mixed' && sku.length >= 4 && lowerCand.indexOf(sku.toLowerCase()) !== -1) {
+        out.matched = sku; out.productName = items[j].name || ''; return out;
+      }
+    }
+  }
+  return out;
+}
+
+/** Tick the matched SKU in the Generator multi-select / set it in the Extractor dropdown. */
+function applyUrlSku(prefix, sku) {
+  if (prefix === 'gen') {
+    // URL-derived SKU acts as a single-select hint — replace any existing selections.
+    setMultiSelectValues('gen_productSku', [sku]);
+    onP3SkuChange();
+  } else if (prefix === 'ext') {
+    const sel = document.getElementById('ext_productSku');
+    if (sel) {
+      Array.from(sel.options).forEach(function(opt) {
+        if (opt.value === sku) { opt.selected = true; }
+      });
+      onExtP3SkuChange();
+    }
+  }
+}
+
+function onP3BrandChange() {
+  const brand = (document.getElementById('gen_p3_brand') || {}).value || '';
+  const skuShell = document.getElementById('gen_productSku_shell');
+  const catDisplay = document.getElementById('gen_productCat_display');
+  const catMixedWrap = document.getElementById('gen_productCat_mixed_wrap');
+  const catShell = document.getElementById('gen_productCat_shell');
+
+  // Show/hide Product SKU/Cat vs Landing Page based on brand type
+  onP3BrandTypeChange();
+
+  // Re-resolve LP Domain URL if in URL mode (brand affects Owned mapping)
+  onLpDomainUrlInput('gen');
+
+  if (!brand) {
+    if (skuShell) skuShell.innerHTML = '<div class="hint" style="padding:8px 10px; background:var(--vn-panel); border-radius:4px;">Pick a brand above first</div>';
+    if (catDisplay) catDisplay.innerHTML = '<em>Select SKU(s) above to see categories.</em>';
+    if (catMixedWrap) catMixedWrap.style.display = 'none';
+    return;
+  }
+  if (!PRODUCTS || !PRODUCTS.byBrand || !PRODUCTS.byBrand[brand]) {
+    if (skuShell) skuShell.innerHTML = '<div class="hint" style="padding:8px 10px; background:var(--vn-warn-bg); color:var(--vn-warn-fg); border-radius:4px;">No products for "' + escapeHtml(brand) + '" in the Products sheet.</div>';
+    return;
+  }
+
+  const items = PRODUCTS.byBrand[brand];
+  const skuOptions = items.map(function(p) {
+    const isMixed = p.sku.toLowerCase() === 'mixed';
+    const category = p.category || '—';
+    const html = isMixed
+      ? '<strong>' + escapeHtml(p.sku) + '</strong> &nbsp; <span class="sku-category" style="color:var(--vn-warn-fg);">Mixed (pick category below)</span>'
+      : '<strong>' + escapeHtml(p.sku) + '</strong> &nbsp; <span class="sku-category">' + escapeHtml(category) + '</span>' +
+        (p.name ? '<span class="sku-name">' + escapeHtml(p.name) + '</span>' : '');
+    return {
+      value: p.sku,
+      label: p.sku,
+      html: html,
+      searchTerms: (p.name || '') + ' ' + (p.category || ''),
+      attrs: { category: p.category || '', name: p.name || '' }
+    };
+  });
+  skuShell.innerHTML = makeMultiSelect('gen_productSku', skuOptions, '— pick SKU(s) for ' + brand + ' —', 'onP3SkuChange');
+
+  // Build category list for the Mixed-SKU picker. Include every mapped category
+  // for this brand, PLUS an explicit "Mixed" option (so users can produce
+  // "LP: Owned ~ Mixed (Mixed)" when they want a full catch-all).
+  const rawCats = (PRODUCTS.categoriesByBrand && PRODUCTS.categoriesByBrand[brand]) || [];
+  const cats = rawCats.slice();
+  if (cats.indexOf('Mixed') === -1) cats.push('Mixed');
+  if (catShell) {
+    catShell.innerHTML = makeMultiSelect('gen_productCat', cats, '— pick categories for Mixed —');
+  }
+  onP3SkuChange();
+}
+
+function onP3SkuChange() {
+  const wrap = document.getElementById('gen_productSku');
+  const checks = wrap ? wrap.querySelectorAll('.ms-option input[type="checkbox"]:checked') : [];
+  const display = document.getElementById('gen_productCat_display');
+  const mixedWrap = document.getElementById('gen_productCat_mixed_wrap');
+  if (!display) return;
+  const selected = Array.from(checks).map(function(cb) {
+    return { sku: cb.value, cat: cb.getAttribute('data-category') || '' };
+  });
+  const anyMixed = selected.some(function(s) { return s.sku.toLowerCase() === 'mixed'; });
+  if (selected.length === 0) {
+    display.innerHTML = '<em>Select SKU(s) above to see categories.</em>';
+  } else {
+    display.innerHTML = selected.map(function(s) {
+      if (s.sku.toLowerCase() === 'mixed') {
+        return '<div><strong>' + escapeHtml(s.sku) + '</strong> → <em style="color:var(--vn-warn-fg);">category picked below</em></div>';
+      }
+      return '<div><strong>' + escapeHtml(s.sku) + '</strong> → ' + escapeHtml(s.cat || '—') + '</div>';
+    }).join('');
+  }
+  if (mixedWrap) mixedWrap.style.display = anyMixed ? 'block' : 'none';
+}
+
+function readGeneratorSelections(explicitLevel) {
+  const level = explicitLevel || document.querySelector('input[name="gen-level"]:checked').value;
+  const fields = TAXONOMY[level].fields;
+  const selections = {};
+  fields.forEach(function(fld) {
+    if (fld.type === 'auto') return;
+
+    if (fld.type === 'fixed') {
+      selections[fld.key] = [String(fld.value || '')];
+      return;
+    }
+
+    if (level === 'P3' && fld.key === 'productSku') {
+      selections.productSku = readMultiSelectValues('gen_productSku');
+      return;
+    }
+    if (level === 'P3' && fld.key === 'productCat') {
+      selections.productCat = readMultiSelectValues('gen_productCat');
+      return;
+    }
+    if (level === 'P3' && fld.key === 'landingPage') {
+      const el = document.getElementById('gen_landingPage');
+      const raw = el ? (el.value || '').trim() : '';
+      selections.landingPage = raw ? raw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean) : [];
+      return;
+    }
+    if (level === 'P3' && fld.key === 'domain') {
+      const mode = (document.querySelector('input[name="gen_domain_mode"]:checked') || {}).value || 'url';
+      if (mode === 'url') {
+        const rawUrl = (document.getElementById('gen_domain_url') || {}).value || '';
+        const brand = (document.getElementById('gen_p3_brand') || {}).value || '';
+        const resolved = resolveUrlToDomain(rawUrl, brand);
+        selections.domain = resolved ? [resolved] : [];
+      } else {
+        selections.domain = readMultiSelectValues('gen_domain');
+      }
+      return;
+    }
+
+    if (fld.type === 'dropdown') {
+      selections[fld.key] = readMultiSelectValues('gen_' + fld.key);
+    } else if (fld.type === 'date') {
+      const list = document.getElementById('gen_' + fld.key + '_list');
+      if (list) {
+        const vals = Array.from(list.querySelectorAll('.gen-date-value'))
+          .map(function(el) { return (el.value || '').trim(); })
+          .filter(Boolean);
+        selections[fld.key] = vals;
+      } else {
+        // Legacy single-picker fallback
+        const el  = document.getElementById('gen_' + fld.key);
+        const raw = el ? (el.value || '').trim() : '';
+        selections[fld.key] = raw ? [raw] : [];
+      }
+    } else {
+      const el  = document.getElementById('gen_' + fld.key);
+      const raw = el ? (el.value || '').trim() : '';
+      selections[fld.key] = raw ? raw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean) : [];
+    }
+  });
+  // Collect every field marked "Pair line-by-line" — the backend zips these
+  // row-by-row instead of cartesian-multiplying them.
+  const paired = [];
+  Array.from(document.querySelectorAll('.gen-pair-cb:checked')).forEach(function(cb) {
+    const key = cb.getAttribute('data-field');
+    if (key) paired.push(key);
+  });
+  selections.pairedFieldKeys = paired;
+  return { level: level, selections: selections };
+}
+
+function validateClientFreeTextInputs(level, selections) {
+  // Block | and ~ before sending to backend — gives user a fast, specific error.
+  const fields = TAXONOMY[level].fields;
+  for (let i = 0; i < fields.length; i++) {
+    const fld = fields[i];
+    if (fld.type !== 'text') continue;
+    const vals = selections[fld.key] || [];
+    for (let j = 0; j < vals.length; j++) {
+      for (let k = 0; k < RESERVED_CHARS.length; k++) {
+        if (String(vals[j]).indexOf(RESERVED_CHARS[k]) !== -1) {
+          return fld.label + ' contains the reserved character "' + RESERVED_CHARS[k] + '". Remove it before generating.';
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function runGenerate() {
+  const { level, selections } = readGeneratorSelections();
+  const clientIssue = validateClientFreeTextInputs(level, selections);
+  if (clientIssue) { setStatus('gen-status', '<span class="fail">' + escapeHtml(clientIssue) + '</span>'); return; }
+
+  // Snapshot these selections so downstream levels can inherit them
+  genLastInputs[level] = selections;
+
+  setStatus('gen-status', '<span class="spinner"></span> Generating…');
+  document.getElementById('gen-results').innerHTML = '';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res.ok) { setStatus('gen-status', '<span class="fail">' + escapeHtml(res.error) + '</span>'); return; }
+      const names = res.names;
+      genLastResults = { level: level, names: names };
+      setStatus('gen-status', '<span class="pass">Generated ' + names.length + ' name' + (names.length === 1 ? '' : 's') + '</span>');
+      const rowsHtml = names.map(function(n, i) {
+        return '<tr>' +
+                 '<td>' + (i + 1) + '</td>' +
+                 '<td>' + escapeHtml(n) + '</td>' +
+               '</tr>';
+      }).join('');
+      const html =
+        '<div class="utm-table-wrap">' +
+          '<table class="utm-table">' +
+            '<thead><tr>' +
+              '<th>#</th>' +
+              '<th>Generated ' + escapeHtml(level) + ' Name</th>' +
+            '</tr></thead>' +
+            '<tbody>' + rowsHtml + '</tbody>' +
+          '</table>' +
+        '</div>' +
+        '<div style="margin-top:12px;">' +
+          '<button type="button" class="btn" onclick="copyGeneratedToClipboard()">Copy all</button>' +
+          '<button type="button" class="btn accent" onclick="exportGeneratedToNewFile()">Export to new Google Sheet</button>' +
+          '<button type="button" class="btn secondary" onclick="downloadGeneratedCsv()">Download CSV</button>' +
+        '</div>';
+      document.getElementById('gen-results').innerHTML = html;
+    })
+    .withFailureHandler(function(err) {
+      setStatus('gen-status', '<span class="fail">' + escapeHtml(err.message || err) + '</span>');
+    })
+    .runGenerator(level, selections);
+}
+
+function copyGeneratedToClipboard() {
+  const names = genLastResults.names || [];
+  if (names.length === 0) return;
+  writeToClipboard(names.join('\n'), 'gen-status', names.length + ' name' + (names.length === 1 ? '' : 's'));
+}
+
+function exportGeneratedToNewFile() {
+  const { level, names } = genLastResults;
+  if (!level || !names || names.length === 0) {
+    setStatus('gen-status', '<span class="fail">Nothing to export — generate names first</span>');
+    return;
+  }
+  setStatus('gen-status', '<span class="spinner"></span> Creating a new Google Sheet…');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.ok) {
+        const opened = tryOpenNewTab(res.url);
+        setStatus('gen-status',
+          '<span class="pass">Created new sheet "' + escapeHtml(res.name) + '" with ' + res.count + ' names. </span>' +
+          (opened ? '<span class="hint">(opened in a new tab)</span>' : '<a href="' + escapeAttr(res.url) + '" target="_blank" rel="noopener">Open it ↗</a>')
+        );
+      } else {
+        setStatus('gen-status', '<span class="fail">Export failed: ' + escapeHtml((res && res.error) || 'unknown error') + '</span>');
+      }
+    })
+    .withFailureHandler(function(err) {
+      setStatus('gen-status', '<span class="fail">' + escapeHtml(err.message || err) + '</span>');
+    })
+    .exportGeneratedToNewSheet(level, names);
+}
+
+function downloadGeneratedCsv() {
+  const { level, names } = genLastResults;
+  if (!names || names.length === 0) {
+    setStatus('gen-status', '<span class="fail">Nothing to download</span>');
+    return;
+  }
+  const csv = 'Generated ' + level + '\n' + names.map(csvField).join('\n');
+  downloadCsv('taxonomy-' + level + '-' + timestamp() + '.csv', csv);
+  setStatus('gen-status', '<span class="pass">Downloaded CSV with ' + names.length + ' name' + (names.length === 1 ? '' : 's') + '</span>');
+}
+
+function clearGenerator() {
+  renderGeneratorFields();
+  document.getElementById('gen-status').innerHTML = '';
+  document.getElementById('gen-results').innerHTML = '';
+  genLastResults = { level: null, names: [] };
+}
+
+// ============================================================
+// EXTRACTOR
+// ============================================================
+function runExtract() {
+  const name = document.getElementById('ext-input').value;
+  const level = document.querySelector('input[name="ext-level"]:checked').value;
+  if (!name.trim()) { setStatus('ext-status', '<span class="fail">Paste a name first</span>'); return; }
+  setStatus('ext-status', '<span class="spinner"></span> Parsing…');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res.ok) {
+        setStatus('ext-status', '<span class="fail">' + escapeHtml(res.error) + '</span>');
+        document.getElementById('ext-fields').innerHTML = '';
+        document.getElementById('ext-rebuild-area').style.display = 'none';
+        return;
+      }
+      extractedLevel = res.level;
+      extractedValues = res.values;
+      renderExtractorFields(res.level, res.values);
+      document.getElementById('ext-rebuild-area').style.display = 'block';
+      const parseMsg = res.parseIssues && res.parseIssues.length
+        ? '<span class="fail">Level: ' + res.level + ' — parse notes: ' + res.parseIssues.map(escapeHtml).join('; ') + '</span>'
+        : '<span class="pass">Level: ' + res.level + ' — parsed successfully</span>';
+      setStatus('ext-status', parseMsg);
+    })
+    .withFailureHandler(function(err) {
+      setStatus('ext-status', '<span class="fail">' + escapeHtml(err.message || err) + '</span>');
+    })
+    .runExtractor(level, name);
+}
+
+function renderExtractorFields(level, values) {
+  const fields = TAXONOMY[level].fields;
+  const container = document.getElementById('ext-fields');
+  container.innerHTML =
+    '<h3 style="margin-top:16px;">' + escapeHtml(TAXONOMY[level].label) + ' fields</h3>' +
+    '<div class="banner-hint" style="margin-bottom:10px;">' +
+      '<strong>Edit any field below</strong>, then click <strong>Rebuild Name</strong> to generate the revised name.' +
+    '</div>';
+
+  if (level === 'P3') {
+    const sku = values.productSku || '';
+    let autoBrand = '';
+    if (PRODUCTS && PRODUCTS.bySku && PRODUCTS.bySku[sku]) autoBrand = PRODUCTS.bySku[sku].brand;
+    const brandsAvailable = BRANDS_FOR_P3 || [];
+    const brandOpts = ['<option value="">— pick a brand —</option>']
+      .concat(brandsAvailable.map(function(b) {
+        return '<option value="' + escapeAttr(b) + '"' + (b === autoBrand ? ' selected' : '') + '>' + escapeHtml(b) + '</option>';
+      })).join('');
+    const brandDiv = document.createElement('div');
+    brandDiv.innerHTML =
+      '<label>Brand <span class="note">(filters Product SKU — not in output)</span></label>' +
+      '<select id="ext_p3_brand" onchange="onExtP3BrandChange()">' + brandOpts + '</select>';
+    container.appendChild(brandDiv);
+  }
+
+  fields.forEach(function(fld) {
+    const val = values[fld.key] != null ? values[fld.key] : '';
+    const div = document.createElement('div');
+    const autoTag = fld.type === 'auto' ? ' <span class="note">(auto from ' + fld.derivedFrom + ')</span>' : '';
+
+    if (level === 'P3' && fld.key === 'productSku') {
+      div.innerHTML =
+        '<label>Product SKU <span class="note">(searchable — SKU or product name)</span></label>' +
+        '<input type="text" id="ext_productSku_search" placeholder="Type to filter SKUs or product names…" oninput="filterExtSkuList()" style="margin-bottom:4px;">' +
+        '<select id="ext_productSku" size="6" style="height:auto;" onchange="onExtP3SkuChange()"></select>';
+      container.appendChild(div);
+      return;
+    }
+    if (level === 'P3' && fld.key === 'productCat') {
+      div.innerHTML =
+        '<label>Product Category <span class="note">(auto-filled from SKU; editable only for "Mixed")</span></label>' +
+        '<input type="text" id="ext_productCat" value="' + escapeAttr(val) + '">';
+      container.appendChild(div);
+      return;
+    }
+    if (level === 'P3' && fld.key === 'domain') {
+      div.innerHTML =
+        '<label>Landing Page Domain <span class="note">(enter a URL to auto-resolve, or pick from list)</span></label>' +
+        '<div class="toggle-pill">' +
+          '<input type="radio" name="ext_domain_mode" id="ext_domain_mode_url" value="url" onchange="onLpDomainModeChange(\'ext\')">' +
+          '<label for="ext_domain_mode_url">Enter URL</label>' +
+          '<input type="radio" name="ext_domain_mode" id="ext_domain_mode_list" value="list" checked onchange="onLpDomainModeChange(\'ext\')">' +
+          '<label for="ext_domain_mode_list">Select from list</label>' +
+        '</div>' +
+        '<div id="ext_domain_url_wrap" style="display:none;">' +
+          '<input type="url" id="ext_domain_url" placeholder="e.g. https://www.cuisinart.com/.../DGB-30.html" oninput="onLpDomainUrlInputExt()">' +
+          '<div class="hint" id="ext_domain_url_status">Paste a URL — the LP Domain value will auto-resolve.</div>' +
+        '</div>' +
+        '<div id="ext_domain_list_wrap">' +
+          buildExtDropdownHtml(fld, val) +
+        '</div>';
+      container.appendChild(div);
+      return;
+    }
+
+    if (fld.type === 'fixed') {
+      div.innerHTML =
+        '<label>' + escapeHtml(fld.label) + ' <span class="note">(fixed)</span></label>' +
+        '<input type="text" id="ext_' + fld.key + '" value="' + escapeAttr(fld.value || '') + '" readonly style="background:var(--vn-panel); font-weight:700;">';
+    } else if (fld.type === 'dropdown') {
+      div.innerHTML =
+        '<label>' + escapeHtml(fld.label) + autoTag + '</label>' +
+        buildExtDropdownHtml(fld, val);
+    } else if (fld.type === 'auto') {
+      div.innerHTML =
+        '<label>' + escapeHtml(fld.label) + autoTag + '</label>' +
+        '<input type="text" id="ext_' + fld.key + '" value="' + escapeAttr(val) + '" readonly style="background:var(--vn-panel);">';
+    } else if (fld.type === 'date') {
+      const iso = mdyToIso(val);
+      div.innerHTML =
+        '<label>' + escapeHtml(fld.label) + '</label>' +
+        '<input type="date" id="ext_' + fld.key + '" value="' + escapeAttr(iso) + '">';
+    } else {
+      const blurAttr = (fld.key === 'influencer') ? ' onblur="stripInfluencerAtSigns(this)"' : '';
+      div.innerHTML =
+        '<label>' + escapeHtml(fld.label) + '</label>' +
+        '<input type="text" id="ext_' + fld.key + '" value="' + escapeAttr(val) + '"' + blurAttr + '>';
+    }
+    container.appendChild(div);
+  });
+
+  fields.forEach(function(fld) {
+    if (fld.type === 'auto' && fld.derivedFrom && fld.map) {
+      const driver = document.getElementById('ext_' + fld.derivedFrom);
+      const target = document.getElementById('ext_' + fld.key);
+      if (driver && target) {
+        const sync = function() {
+          const mapped = fld.map[driver.value];
+          if (mapped) target.value = mapped;
+        };
+        driver.addEventListener('change', sync);
+        driver.addEventListener('input', sync);
+        sync();  // also run once now so a mismatched source self-heals on extract
+      }
+    }
+  });
+
+  if (level === 'P3') populateExtSkuList(values.productSku || '', values.productCat || '');
+}
+
+function buildExtDropdownHtml(fld, val) {
+  const opts = fld.options.map(function(o) {
+    const sel = (String(o) === String(val)) ? ' selected' : '';
+    return '<option value="' + escapeAttr(o) + '"' + sel + '>' + escapeHtml(o) + '</option>';
+  }).join('');
+  const inOpts = fld.options.indexOf(String(val)) !== -1;
+  const customOpt = val && !inOpts ? '<option value="' + escapeAttr(val) + '" selected>' + escapeHtml(val) + ' (not in list)</option>' : '';
+  return '<select id="ext_' + fld.key + '">' + customOpt + opts + '</select>';
+}
+
+function onLpDomainUrlInputExt() {
+  const raw = (document.getElementById('ext_domain_url') || {}).value || '';
+  const brand = (document.getElementById('ext_p3_brand') || {}).value || '';
+  const status = document.getElementById('ext_domain_url_status');
+  const resolved = resolveUrlToDomain(raw, brand);
+  // Also set the hidden domain <select> so runRebuildClient picks up the value
+  const listSel = document.getElementById('ext_domain');
+  if (resolved && listSel) {
+    // Add resolved as a selected option (or match existing one)
+    let found = false;
+    Array.from(listSel.options).forEach(function(opt) {
+      if (opt.value === resolved) { opt.selected = true; found = true; }
+    });
+    if (!found) {
+      const opt = document.createElement('option');
+      opt.value = resolved;
+      opt.textContent = resolved + ' (from URL)';
+      opt.selected = true;
+      listSel.appendChild(opt);
+    }
+  }
+  if (!raw.trim()) { if (status) status.textContent = 'Paste a URL — the LP Domain value will auto-resolve.'; return; }
+  let html = '';
+  if (resolved) {
+    html += '<span class="pass">Detected:</span> <strong>' + escapeHtml(resolved) + '</strong>';
+    // Retailer-URL → SKU mapping (when not Owned)
+    if (resolved !== 'Owned') {
+      const skuInfo = matchSkuByRetailerUrl(raw, brand);
+      if (skuInfo) {
+        html += '<br><span class="pass">Detected SKU:</span> <strong>' + escapeHtml(skuInfo.sku) + '</strong>' +
+                (skuInfo.name ? ' <span class="hint">(' + escapeHtml(skuInfo.name) + ')</span>' : '') +
+                ' — <a href="#" onclick="applyUrlSku(\'ext\', \'' + escapeAttr(skuInfo.sku) + '\'); return false;">use this SKU</a>';
+      }
+    }
+  } else {
+    html += '<span class="fail">No Domain Map rule matched</span> — switch to "Select from list".';
+  }
+  if (status) status.innerHTML = html;
+}
+
+function populateExtSkuList(currentSku, currentCat) {
+  const brandSel = document.getElementById('ext_p3_brand');
+  const skuSel = document.getElementById('ext_productSku');
+  if (!brandSel || !skuSel) return;
+  const brand = brandSel.value;
+  if (!brand || !PRODUCTS || !PRODUCTS.byBrand || !PRODUCTS.byBrand[brand]) {
+    skuSel.innerHTML = '<option value="' + escapeAttr(currentSku) + '" selected>' + escapeHtml(currentSku || '(no brand / no products)') + '</option>';
+    return;
+  }
+  const items = PRODUCTS.byBrand[brand];
+  const opts = items.map(function(p) {
+    const sel = (p.sku === currentSku) ? ' selected' : '';
+    let label;
+    if (p.sku.toLowerCase() === 'mixed') {
+      label = p.sku + '  (pick any category manually)';
+    } else {
+      label = p.sku + '  —  ' + (p.category || '—') + (p.name ? '  —  ' + p.name : '');
+    }
+    return '<option value="' + escapeAttr(p.sku) + '" data-category="' + escapeAttr(p.category || '') + '" data-name="' + escapeAttr(p.name || '') + '"' + sel + '>' + escapeHtml(label) + '</option>';
+  });
+  const knownSkus = items.map(function(p) { return p.sku; });
+  if (currentSku && knownSkus.indexOf(currentSku) === -1) {
+    opts.unshift('<option value="' + escapeAttr(currentSku) + '" data-category="' + escapeAttr(currentCat || '') + '" selected>' + escapeHtml(currentSku) + ' (not in catalogue)</option>');
+  }
+  skuSel.innerHTML = opts.join('');
+  onExtP3SkuChange(true);
+}
+
+function onExtP3BrandChange() {
+  const skuSel = document.getElementById('ext_productSku');
+  const catInput = document.getElementById('ext_productCat');
+  populateExtSkuList(skuSel ? skuSel.value : '', catInput ? catInput.value : '');
+  onLpDomainUrlInputExt();
+}
+
+function onExtP3SkuChange(preserveCat) {
+  const skuSel = document.getElementById('ext_productSku');
+  const catInput = document.getElementById('ext_productCat');
+  if (!skuSel || !catInput) return;
+  const opt = skuSel.options[skuSel.selectedIndex];
+  if (!opt) return;
+  const sku = opt.value;
+  const mappedCat = opt.getAttribute('data-category') || '';
+  if (sku.toLowerCase() === 'mixed') {
+    catInput.readOnly = false;
+    catInput.style.background = '';
+    if (!preserveCat) catInput.value = catInput.value || 'Mixed';
+  } else {
+    catInput.readOnly = true;
+    catInput.style.background = 'var(--vn-panel)';
+    catInput.value = mappedCat || catInput.value;
+  }
+}
+
+function filterExtSkuList() {
+  const q = ((document.getElementById('ext_productSku_search') || {}).value || '').toLowerCase();
+  const skuSel = document.getElementById('ext_productSku');
+  if (!skuSel) return;
+  Array.from(skuSel.options).forEach(function(opt) {
+    opt.hidden = q ? (opt.textContent.toLowerCase().indexOf(q) === -1) : false;
+  });
+}
+
+function runRebuildClient() {
+  if (!extractedLevel) return;
+  const fields = TAXONOMY[extractedLevel].fields;
+  const values = {};
+  fields.forEach(function(fld) {
+    const el = document.getElementById('ext_' + fld.key);
+    values[fld.key] = el ? el.value : '';
+  });
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res.ok) { document.getElementById('ext-output').innerHTML = '<span class="fail">' + escapeHtml(res.error) + '</span>'; return; }
+      document.getElementById('ext-output').textContent = res.name;
+    })
+    .withFailureHandler(function(err) {
+      document.getElementById('ext-output').innerHTML = '<span class="fail">' + escapeHtml(err.message || err) + '</span>';
+    })
+    .runRebuild(extractedLevel, values);
+}
+
+function copyExtractedRebuild() {
+  const out = document.getElementById('ext-output');
+  if (!out || !out.textContent) return;
+  writeToClipboard(out.textContent, 'ext-status', 'rebuilt name');
+}
+
+/** Wipe the Single-Name Extractor back to its initial state. */
+function resetExtractor() {
+  // 1. Clear the pasted-name textarea
+  const input = document.getElementById('ext-input');
+  if (input) input.value = '';
+
+  // 2. Reset the level-picker radios back to Auto
+  const autoRadio = document.querySelector('input[name="ext-level"][value=""]');
+  if (autoRadio) autoRadio.checked = true;
+
+  // 3. Wipe the rendered field form
+  const fields = document.getElementById('ext-fields');
+  if (fields) fields.innerHTML = '';
+
+  // 4. Hide the Rebuild section and clear its output box
+  const rebuildArea = document.getElementById('ext-rebuild-area');
+  if (rebuildArea) rebuildArea.style.display = 'none';
+  const output = document.getElementById('ext-output');
+  if (output) output.textContent = '';
+
+  // 5. Clear status
+  const status = document.getElementById('ext-status');
+  if (status) status.innerHTML = '';
+
+  // 6. Reset in-memory state
+  extractedLevel = null;
+  extractedValues = null;
+}
+
+// ============================================================
+// BULK EDIT
+// ============================================================
+let bulkCsvOverrides = null;  // { "full name": { fieldKey: value } }
+let bulkLastResults  = null;
+let URL_BUILDER     = null;   // { supportedBrands, platformTemplates, utc }
+let urlLastResults  = null;
+
+function allFieldsAcrossLevels() {
+  // Union of fields from all three levels, dedup by key, with level tags
+  // and (where applicable) the union of allowed option values across levels.
+  const seen = {};
+  const list = [];
+  ['P1', 'P2', 'P3'].forEach(function(lv) {
+    if (!TAXONOMY || !TAXONOMY[lv]) return;
+    TAXONOMY[lv].fields.forEach(function(fld) {
+      if (fld.type === 'auto') return;
+      if (fld.type === 'fixed') return;  // hardcoded fields can't be bulk-edited
+      if (seen[fld.key]) {
+        seen[fld.key].levels.push(lv);
+        // If this level's version is a dropdown, merge its options in
+        if (fld.type === 'dropdown' && Array.isArray(fld.options)) {
+          const existing = seen[fld.key].options || [];
+          fld.options.forEach(function(o) { if (existing.indexOf(o) === -1) existing.push(o); });
+          seen[fld.key].options = existing;
+          seen[fld.key].type = seen[fld.key].type === 'dropdown' ? 'dropdown' : fld.type;
+        }
+        return;
+      }
+      seen[fld.key] = {
+        key: fld.key,
+        label: fld.label,
+        type: fld.type,
+        levels: [lv],
+        options: (fld.type === 'dropdown' && Array.isArray(fld.options)) ? fld.options.slice() : null
+      };
+      list.push(seen[fld.key]);
+    });
+  });
+  return list;
+}
+
+function addBulkChangeRow(presetKey, presetVal) {
+  const wrap = document.getElementById('bulk-changes');
+  if (!wrap) return;
+  const row = document.createElement('div');
+  row.className = 'bulk-change-row';
+
+  const fields = allFieldsAcrossLevels();
+  const pickerId = 'bulk_picker_' + Math.random().toString(36).slice(2, 8);
+  const msOptions = fields.map(function(f) {
+    return {
+      value: f.key,
+      label: f.label + '  (' + f.levels.join('/') + ')',
+      html: '<strong>' + escapeHtml(f.label) + '</strong>  <span style="color:var(--vn-muted); font-size:11px;">(' + escapeHtml(f.levels.join('/')) + ')</span>',
+      searchTerms: f.key + ' ' + f.label + ' ' + f.levels.join(' ')
+    };
+  });
+
+  row.innerHTML =
+    '<div class="bulk-field-picker-host" data-picker-wrap="' + pickerId + '">' +
+      makeMultiSelect(pickerId, msOptions, 'Search & pick a field…', 'onBulkFieldPickerChangeMs', 'single') +
+    '</div>' +
+    // Hidden native select mirrors the current picker value for backward-compat reads
+    '<select class="bulk-field-picker" style="display:none;"><option value=""></option></select>' +
+    '<span class="bulk-value-cell">' + renderBulkValueInput(null, presetVal) + '</span>' +
+    '<button type="button" class="remove-btn" onclick="this.parentNode.remove()">Remove</button>';
+  wrap.appendChild(row);
+
+  if (presetKey) {
+    setMultiSelectValues(pickerId, [presetKey]);
+    const picker = row.querySelector('.bulk-field-picker');
+    if (picker) {
+      picker.innerHTML = '<option value="' + escapeAttr(presetKey) + '" selected></option>';
+    }
+    onBulkFieldPickerChange(picker, presetVal);
+  }
+}
+
+/** Called when the searchable multi-select picker's value changes. Mirrors
+ *  the picked field-key into the hidden native select and re-renders the
+ *  row's value cell. */
+function onBulkFieldPickerChangeMs(cb) {
+  if (!cb || !cb.checked) return;
+  const row = cb.closest('.bulk-change-row');
+  if (!row) return;
+  const fieldKey = cb.value;
+  const hidden = row.querySelector('.bulk-field-picker');
+  if (hidden) {
+    hidden.innerHTML = '<option value="' + escapeAttr(fieldKey) + '" selected></option>';
+  }
+  onBulkFieldPickerChange(hidden, null);
+}
+
+/**
+ * Render the "New value" input for a bulk-change row.
+ * Special cases (in priority order):
+ *   - productSku: dropdown of all SKUs from every brand in the Products sheet,
+ *     grouped by brand. Picking a non-Mixed SKU auto-populates a paired
+ *     Product Category change row with the mapped category.
+ *   - productCat: dropdown of every unique category across brands.
+ *   - dropdown fields: <select> with the merged spec's options.
+ *   - date fields: native date picker.
+ *   - everything else: plain text input.
+ */
+function renderBulkValueInput(field, presetVal) {
+  const val = presetVal != null ? String(presetVal) : '';
+  if (!field) return '<input type="text" class="bulk-field-value" placeholder="Pick a field first" value="' + escapeAttr(val) + '">';
+
+  // Pick a unique wrap ID based on field key + timestamp (in case of re-render)
+  const wrapId = 'bulk_ms_' + field.key + '_' + Math.random().toString(36).slice(2, 8);
+
+  // --- Product SKU: inline brand picker → filtered SKU dropdown ---
+  if (field.key === 'productSku' && PRODUCTS && PRODUCTS.byBrand) {
+    const brandWrapId = wrapId + '_brand';
+    const brands = Object.keys(PRODUCTS.byBrand).sort();
+    // If preset value maps to a known brand, pre-select that brand
+    let initialBrand = '';
+    if (val && PRODUCTS.bySku && PRODUCTS.bySku[val]) initialBrand = PRODUCTS.bySku[val].brand;
+
+    return (
+      '<div class="bulk-field-value-host" data-wrap="' + wrapId + '" data-preset="' + escapeAttr(val) + '" data-brand-wrap="' + brandWrapId + '">' +
+        '<div class="bulk-inline-label">Step 1 — pick brand</div>' +
+        makeMultiSelect(brandWrapId, brands, 'Pick a brand…', 'onBulkProductBrandChange', 'single') +
+        '<div class="bulk-inline-label" style="margin-top:8px;">Step 2 — pick SKU</div>' +
+        '<div class="bulk-sku-part">' +
+          (initialBrand
+            ? makeMultiSelect(wrapId, buildBulkSkuOptionsForBrand_(initialBrand), 'Pick a SKU…', 'onBulkSkuChange', 'single')
+            : '<div class="hint" style="padding:6px 10px; background:var(--vn-panel); border-radius:4px;">Pick a brand above first.</div>'
+          ) +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  // --- Product Category: inline brand picker → filtered category dropdown ---
+  if (field.key === 'productCat' && PRODUCTS && PRODUCTS.categoriesByBrand) {
+    const brandWrapId = wrapId + '_brand';
+    const brands = Object.keys(PRODUCTS.categoriesByBrand).sort();
+    return (
+      '<div class="bulk-field-value-host" data-wrap="' + wrapId + '" data-preset="' + escapeAttr(val) + '" data-brand-wrap="' + brandWrapId + '" data-kind="productCat">' +
+        '<div class="bulk-inline-label">Step 1 — pick brand</div>' +
+        makeMultiSelect(brandWrapId, brands, 'Pick a brand…', 'onBulkProductBrandChange', 'single') +
+        '<div class="bulk-inline-label" style="margin-top:8px;">Step 2 — pick category</div>' +
+        '<div class="bulk-sku-part">' +
+          '<div class="hint" style="padding:6px 10px; background:var(--vn-panel); border-radius:4px;">Pick a brand above first.</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  // --- Generic dropdown field with allowed options ---
+  if (field.type === 'dropdown' && Array.isArray(field.options) && field.options.length > 0) {
+    const ms = makeMultiSelect(wrapId, field.options, 'Pick a value…', null, 'single');
+    return '<div class="bulk-field-value-host" data-wrap="' + wrapId + '" data-preset="' + escapeAttr(val) + '">' + ms + '</div>';
+  }
+
+  if (field.type === 'date') {
+    const iso = mdyToIso(val) || (/^\d{4}-\d{2}-\d{2}$/.test(val) ? val : '');
+    return '<input type="date" class="bulk-field-value" value="' + escapeAttr(iso) + '">';
+  }
+  return '<input type="text" class="bulk-field-value" placeholder="New value" value="' + escapeAttr(val) + '">';
+}
+
+/** After a bulk value cell with a multi-select is rendered, apply the preset. */
+function applyBulkCellPreset(cell) {
+  if (!cell) return;
+  const host = cell.querySelector('.bulk-field-value-host');
+  if (!host) return;
+  const wrapId = host.getAttribute('data-wrap');
+  const preset = host.getAttribute('data-preset') || '';
+  const brandWrapId = host.getAttribute('data-brand-wrap');
+  // For Product SKU / Category hosts: pre-select the brand that owns this preset
+  if (preset && brandWrapId && PRODUCTS && PRODUCTS.bySku && PRODUCTS.bySku[preset]) {
+    setMultiSelectValues(brandWrapId, [PRODUCTS.bySku[preset].brand]);
+  }
+  if (wrapId && preset) setMultiSelectValues(wrapId, [preset]);
+}
+
+/** Build the option list for a brand's SKUs (for bulk edit). */
+function buildBulkSkuOptionsForBrand_(brand) {
+  const items = (PRODUCTS && PRODUCTS.byBrand && PRODUCTS.byBrand[brand]) || [];
+  return items.map(function(p) {
+    const isMixed = p.sku.toLowerCase() === 'mixed';
+    const html = isMixed
+      ? '<strong>' + escapeHtml(p.sku) + '</strong> <span class="sku-category" style="color:var(--vn-warn-fg);">(catch-all — pick category manually)</span>'
+      : '<strong>' + escapeHtml(p.sku) + '</strong> <span class="sku-category">— ' + escapeHtml(p.category || '—') + '</span>' +
+        (p.name ? '<span class="sku-name">' + escapeHtml(p.name) + '</span>' : '');
+    return {
+      value: p.sku,
+      label: p.sku,
+      html: html,
+      searchTerms: (p.name || '') + ' ' + (p.category || ''),
+      attrs: { category: p.category || '', brand: brand }
+    };
+  });
+}
+
+/** When the inline brand picker changes, repopulate the sibling SKU/Category dropdown. */
+function onBulkProductBrandChange(cb) {
+  if (!cb || !cb.checked) return;
+  const brandWrap = cb.closest('.ms-wrap');
+  const host = brandWrap.closest('.bulk-field-value-host');
+  if (!host) return;
+  const part = host.querySelector('.bulk-sku-part');
+  if (!part) return;
+  const skuWrapId = host.getAttribute('data-wrap');
+  const preset = host.getAttribute('data-preset') || '';
+  const kind = host.getAttribute('data-kind') || 'productSku';
+  const brand = cb.value;
+
+  if (kind === 'productCat') {
+    const cats = ((PRODUCTS.categoriesByBrand && PRODUCTS.categoriesByBrand[brand]) || []).slice();
+    if (cats.indexOf('Mixed') === -1) cats.push('Mixed');
+    part.innerHTML = makeMultiSelect(skuWrapId, cats, 'Pick a category…', null, 'single');
+  } else {
+    const options = buildBulkSkuOptionsForBrand_(brand);
+    if (options.length === 0) {
+      part.innerHTML = '<div class="hint" style="padding:6px 10px; background:var(--vn-warn-bg); color:var(--vn-warn-fg); border-radius:4px;">No SKUs listed for "' + escapeHtml(brand) + '" in the Products sheet.</div>';
+      return;
+    }
+    part.innerHTML = makeMultiSelect(skuWrapId, options, 'Pick a SKU…', 'onBulkSkuChange', 'single');
+  }
+
+  // If the preset matches an option under the new brand, re-select it
+  if (preset) setMultiSelectValues(skuWrapId, [preset]);
+}
+
+/**
+ * When a SKU is picked in the bulk editor, auto-update (or add) a Product
+ * Category change row using the SKU's mapped category. Mixed SKU is skipped —
+ * user picks the category manually.
+ */
+/**
+ * Auto-add / update a matching Product Category change row when a SKU is
+ * picked in the Bulk Edit SKU dropdown. Mixed SKUs skip auto-fill (user
+ * picks the category manually from the brand's categories).
+ */
+function onBulkSkuChange(el) {
+  if (!el) return;
+  let sku = '';
+  let mappedCat = '';
+  // el can be a <select> (legacy) or a checkbox input (new multi-select single mode)
+  if (el.tagName === 'SELECT') {
+    const opt = el.options[el.selectedIndex];
+    if (!opt) return;
+    sku = opt.value || '';
+    mappedCat = opt.getAttribute('data-category') || '';
+  } else if (el.tagName === 'INPUT') {
+    if (!el.checked) return;
+    sku = el.value || '';
+    mappedCat = el.getAttribute('data-category') || '';
+  } else {
+    return;
+  }
+  if (!sku || sku.toLowerCase() === 'mixed' || !mappedCat) return;
+
+  // Find an existing productCat change row
+  const rows = document.querySelectorAll('.bulk-change-row');
+  let catRow = null;
+  rows.forEach(function(row) {
+    const picker = row.querySelector('.bulk-field-picker');
+    if (picker && picker.value === 'productCat') catRow = row;
+  });
+
+  if (!catRow) {
+    // Add a new Product Category row pre-seeded with the mapped category
+    addBulkChangeRow('productCat', mappedCat);
+    return;
+  }
+  // Existing row: update its preset + multi-select value
+  const cell = catRow.querySelector('.bulk-value-cell');
+  if (!cell) return;
+  const host = cell.querySelector('.bulk-field-value-host');
+  if (host) {
+    host.setAttribute('data-preset', mappedCat);
+    // Also re-select the brand in the inline brand picker if possible
+    const brand = el.getAttribute && el.getAttribute('data-brand') || '';
+    const brandWrapId = host.getAttribute('data-brand-wrap');
+    if (brand && brandWrapId) {
+      setMultiSelectValues(brandWrapId, [brand]);
+      // Trigger brand change so the category dropdown repopulates for that brand
+      const cb = document.querySelector('#' + brandWrapId + ' .ms-option input[value="' + cssEscape_(brand) + '"]');
+      if (cb) onBulkProductBrandChange(cb);
+    }
+    const wrapId = host.getAttribute('data-wrap');
+    if (wrapId) setMultiSelectValues(wrapId, [mappedCat]);
+  } else {
+    const valEl = cell.querySelector('.bulk-field-value');
+    if (valEl && 'value' in valEl) valEl.value = mappedCat;
+  }
+}
+
+function cssEscape_(s) {
+  return String(s).replace(/(["'\\\[\]\(\)\.\+\*\?\^\$\|\{\}#\s,])/g, '\\$1');
+}
+
+function onBulkFieldPickerChange(picker, presetVal) {
+  const row = picker.closest('.bulk-change-row');
+  if (!row) return;
+  const key = picker.value;
+  const cell = row.querySelector('.bulk-value-cell');
+  if (!cell) return;
+  if (!key) {
+    cell.innerHTML = renderBulkValueInput(null, presetVal);
+    return;
+  }
+  const field = allFieldsAcrossLevels().find(function(f) { return f.key === key; });
+  cell.innerHTML = renderBulkValueInput(field || null, presetVal);
+  applyBulkCellPreset(cell);
+}
+
+function collectBulkChanges() {
+  const rows = Array.from(document.querySelectorAll('.bulk-change-row'));
+  const changes = [];
+  rows.forEach(function(row) {
+    const fieldKey = row.querySelector('.bulk-field-picker').value;
+    if (!fieldKey) return;
+    const cell = row.querySelector('.bulk-value-cell');
+    if (!cell) return;
+    let value = '';
+    // Check for the multi-select-style value host first
+    const host = cell.querySelector('.bulk-field-value-host');
+    if (host) {
+      const wrapId = host.getAttribute('data-wrap');
+      const picked = readMultiSelectValues(wrapId);
+      value = picked[0] || '';
+    } else {
+      const valEl = cell.querySelector('.bulk-field-value');
+      if (valEl) value = valEl.value || '';
+    }
+    if (value !== '') changes.push({ field: fieldKey, value: value });
+  });
+  return changes;
+}
+
+function runBulkEdit() {
+  const raw = document.getElementById('bulk-input').value;
+  const names = raw.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
+  if (!names.length) {
+    setStatus('bulk-status', '<span class="fail">Paste names first (or upload the template CSV)</span>');
+    return;
+  }
+  const globalChanges = collectBulkChanges();
+  if (globalChanges.length === 0 && !bulkCsvOverrides) {
+    setStatus('bulk-status', '<span class="fail">Add at least one change (or upload a CSV with per-row overrides)</span>');
+    return;
+  }
+  // Client-side | and ~ guard on override values
+  for (let i = 0; i < globalChanges.length; i++) {
+    for (let k = 0; k < RESERVED_CHARS.length; k++) {
+      if (String(globalChanges[i].value).indexOf(RESERVED_CHARS[k]) !== -1) {
+        setStatus('bulk-status', '<span class="fail">Change value for "' + escapeHtml(globalChanges[i].field) + '" contains reserved character "' + RESERVED_CHARS[k] + '"</span>');
+        return;
+      }
+    }
+  }
+
+  setStatus('bulk-status', '<span class="spinner"></span> Applying changes to ' + names.length + ' name' + (names.length === 1 ? '' : 's') + '…');
+  document.getElementById('bulk-results').innerHTML = '';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res || !res.ok) { setStatus('bulk-status', '<span class="fail">' + escapeHtml((res && res.error) || 'Bulk edit failed') + '</span>'); return; }
+      bulkLastResults = res.results;
+      renderBulkResults(res.results);
+      const changed = res.results.filter(function(r){ return r.changed; }).length;
+      const errors  = res.results.filter(function(r){ return r.error; }).length;
+      setStatus('bulk-status',
+        '<span class="pass">' + changed + ' changed</span> · ' +
+        '<span class="fail">' + errors + ' error' + (errors === 1 ? '' : 's') + '</span> · ' +
+        (res.results.length - changed - errors) + ' unchanged (of ' + res.results.length + ')'
+      );
+    })
+    .withFailureHandler(function(err) {
+      setStatus('bulk-status', '<span class="fail">' + escapeHtml(err.message || err) + '</span>');
+    })
+    .runBulkEdit(names, globalChanges, bulkCsvOverrides || {});
+}
+
+function renderBulkResults(results) {
+  const rowsHtml = results.map(function(r, i) {
+    let statusLabel, statusClass;
+    if (r.error)        { statusLabel = 'ERROR';     statusClass = 'dead'; }
+    else if (r.changed) { statusLabel = 'CHANGED';   statusClass = 'live'; }
+    else                { statusLabel = 'UNCHANGED'; statusClass = ''; }
+    return '<tr>' +
+             '<td class="status-cell ' + statusClass + '">' + statusLabel + '</td>' +
+             '<td>' + (i + 1) + '</td>' +
+             '<td>' + escapeHtml(r.level || '') + '</td>' +
+             '<td>' + escapeHtml(r.original || '') + '</td>' +
+             '<td>' + escapeHtml(r.revised || '') + '</td>' +
+             '<td>' + escapeHtml((r.applied || []).join(', ') || '—') + '</td>' +
+             '<td>' + escapeHtml((r.skipped || []).join(', ') || '—') + '</td>' +
+             '<td class="col-instructions">' + escapeHtml(r.error || '—') + '</td>' +
+           '</tr>';
+  }).join('');
+
+  const tableHtml =
+    '<div class="utm-table-wrap">' +
+      '<table class="utm-table">' +
+        '<thead><tr>' +
+          '<th>Status</th>' +
+          '<th>#</th>' +
+          '<th>Level</th>' +
+          '<th>Before</th>' +
+          '<th>After</th>' +
+          '<th>Applied</th>' +
+          '<th>Skipped</th>' +
+          '<th>Error</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rowsHtml + '</tbody>' +
+      '</table>' +
+    '</div>';
+
+  const exportHtml =
+    '<div style="margin-top:12px;">' +
+      '<button type="button" class="btn" onclick="copyBulkToClipboard()">Copy revised</button>' +
+      '<button type="button" class="btn accent" onclick="exportBulkToNewFile()">Export to new Google Sheet</button>' +
+      '<button type="button" class="btn secondary" onclick="downloadBulkCsv()">Download CSV</button>' +
+    '</div>';
+  document.getElementById('bulk-results').innerHTML = tableHtml + exportHtml;
+}
+
+function copyBulkToClipboard() {
+  if (!bulkLastResults) return;
+  const lines = bulkLastResults.filter(function(r){ return r.revised; }).map(function(r){ return r.revised; });
+  if (lines.length === 0) return;
+  writeToClipboard(lines.join('\n'), 'bulk-status', lines.length + ' revised name' + (lines.length === 1 ? '' : 's'));
+}
+
+function exportBulkToNewFile() {
+  if (!bulkLastResults) return;
+  setStatus('bulk-status', '<span class="spinner"></span> Creating a new Google Sheet…');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.ok) {
+        const opened = tryOpenNewTab(res.url);
+        setStatus('bulk-status',
+          '<span class="pass">Created "' + escapeHtml(res.name) + '" with ' + res.count + ' rows. </span>' +
+          (opened ? '<span class="hint">(opened in a new tab)</span>' : '<a href="' + escapeAttr(res.url) + '" target="_blank" rel="noopener">Open it ↗</a>')
+        );
+      } else {
+        setStatus('bulk-status', '<span class="fail">Export failed: ' + escapeHtml((res && res.error) || 'unknown error') + '</span>');
+      }
+    })
+    .withFailureHandler(function(err) {
+      setStatus('bulk-status', '<span class="fail">' + escapeHtml(err.message || err) + '</span>');
+    })
+    .exportBulkResultsToNewSheet(bulkLastResults);
+}
+
+function downloadBulkCsv() {
+  if (!bulkLastResults) return;
+  const header = ['Level', 'Original', 'Revised', 'Changed', 'Applied Fields', 'Skipped', 'Error'];
+  const rows = bulkLastResults.map(function(r) {
+    return [r.level || '', r.original || '', r.revised || '', r.changed ? 'YES' : (r.error ? 'ERROR' : 'NO'), (r.applied || []).join('; '), (r.skipped || []).join('; '), r.error || ''];
+  });
+  const csv = header.map(csvField).join(',') + '\n' + rows.map(function(row){ return row.map(csvField).join(','); }).join('\n');
+  downloadCsv('taxonomy-bulk-edit-' + timestamp() + '.csv', csv);
+}
+
+function clearBulk() {
+  document.getElementById('bulk-input').value = '';
+  document.getElementById('bulk-file').value = '';
+  document.getElementById('bulk-file-status').innerHTML = '';
+  document.getElementById('bulk-status').innerHTML = '';
+  document.getElementById('bulk-results').innerHTML = '';
+  document.getElementById('bulk-changes').innerHTML = '';
+  bulkCsvOverrides = null;
+  bulkLastResults  = null;
+}
+
+// ============================================================
+// URL BUILDER
+// ============================================================
+function populateUrlBrandPicker() {
+  const sel = document.getElementById('url_brand');
+  if (!sel || !URL_BUILDER) return;
+  const brands = URL_BUILDER.supportedBrands || [];
+  sel.innerHTML = '<option value="">— pick a brand —</option>' +
+    brands.map(function(b) { return '<option value="' + escapeAttr(b) + '">' + escapeHtml(b) + '</option>'; }).join('');
+}
+
+function onUrlBrandChange() {
+  const brand = (document.getElementById('url_brand') || {}).value || '';
+  const host  = document.getElementById('url-fields-host');
+  const hint  = document.getElementById('url_brand_hint');
+  if (!host) return;
+  if (!brand) {
+    host.style.display = 'none';
+    host.innerHTML = '';
+    if (hint) hint.textContent = '';
+    return;
+  }
+  host.style.display = '';
+
+  if (brand === 'Unique Vacations Inc.') {
+    if (hint) hint.textContent = 'Composite campaign build — lowercase, special chars stripped, joined with "_".';
+    host.innerHTML = renderUrlUtcFields_();
+  } else {
+    if (hint) hint.textContent = 'Platform-driven fixed template. Dynamic tokens are filled by the ad platform at serve time.';
+    host.innerHTML = renderUrlPlatformFields_();
+  }
+}
+
+function renderUrlPlatformFields_() {
+  const platforms = Object.keys(URL_BUILDER.platformTemplates || {});
+  const opts = ['<option value="">— pick a platform —</option>']
+    .concat(platforms.map(function(p) { return '<option value="' + escapeAttr(p) + '">' + escapeHtml(p) + '</option>'; }))
+    .join('');
+  return (
+    // Mode picker — single URL vs bulk URL list
+    '<div class="field-grid">' +
+      '<div class="field-cell wide" style="background:var(--vn-soft); border-radius:6px; padding:10px 12px; border:1px solid var(--vn-line);">' +
+        '<div class="field-header"><span class="field-num">★</span><span class="field-label">Mode</span></div>' +
+        '<label style="margin-right:14px;"><input type="radio" name="url-mode" value="single" checked onchange="onUrlModeChange()"> Single URL</label>' +
+        '<label><input type="radio" name="url-mode" value="bulk" onchange="onUrlModeChange()"> Bulk URLs</label>' +
+        '<div class="hint" style="margin-top:6px;">Bulk mode lets you paste multiple destination URLs. Pick a platform to apply to all of them, then override individual rows after build if needed.</div>' +
+      '</div>' +
+    '</div>' +
+
+    // Single URL block
+    '<div id="url-mode-single">' +
+      '<div class="field-grid">' +
+        '<div class="field-cell dbl">' +
+          '<div class="field-header"><span class="field-num">1</span><span class="field-label">Destination URL <span class="field-note">(http:// or https://, no query string)</span></span></div>' +
+          '<input type="url" id="url_destinationUrl" placeholder="https://www.cuisinart.com/.../DGB-30.html">' +
+        '</div>' +
+        '<div class="field-cell">' +
+          '<div class="field-header"><span class="field-num">2</span><span class="field-label">Platform</span></div>' +
+          '<select id="url_platform">' + opts + '</select>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+    // Bulk URL block
+    '<div id="url-mode-bulk" style="display:none;">' +
+      '<div class="field-grid">' +
+        '<div class="field-cell wide">' +
+          '<div class="field-header"><span class="field-num">1</span><span class="field-label">Apply this Platform to All URLs <span class="field-note">(can be overridden per-row before building)</span></span></div>' +
+          '<select id="url_bulk_platform" onchange="onBulkPlatformChange()">' + opts + '</select>' +
+        '</div>' +
+        '<div class="field-cell wide">' +
+          '<div class="field-header"><span class="field-num">2</span><span class="field-label">Destination URLs <span class="field-note">(paste one per line, http:// or https://, no query string)</span></span></div>' +
+          '<textarea id="url_bulk_input" style="min-height:110px; font-family: \'SF Mono\', Consolas, monospace; font-size:12px;" placeholder="https://www.cuisinart.com/chefs-classic-stainless-skillet-fp22-24/CSS-22.html&#10;https://www.cuisinart.com/chefs-classic-3-quart-saucepan/74-193P1.html&#10;https://www.babylisspro.com/curling-irons/babnt125tuc.html"></textarea>' +
+          '<div style="margin-top:8px;">' +
+            '<button type="button" class="btn secondary" onclick="loadBulkUrlsFromTextarea()">Load URLs into editable list</button>' +
+            '<span class="hint" style="margin-left:8px;">— or skip the textarea and add rows manually below.</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="field-cell wide">' +
+          '<div class="field-header"><span class="field-num">3</span><span class="field-label">URL List <span class="field-note">(per-row platform override available)</span></span></div>' +
+          '<div id="url-list-host" class="url-list-wrap"></div>' +
+          '<button type="button" class="btn secondary" onclick="addBulkUrlRow()" style="margin-top:6px;">+ Add URL row</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+let URL_BULK_ROWS = [];  // [{ url, platform }]
+
+function onUrlModeChange() {
+  const mode = (document.querySelector('input[name="url-mode"]:checked') || {}).value || 'single';
+  const single = document.getElementById('url-mode-single');
+  const bulk   = document.getElementById('url-mode-bulk');
+  if (single) single.style.display = (mode === 'single') ? '' : 'none';
+  if (bulk)   bulk.style.display   = (mode === 'bulk')   ? '' : 'none';
+}
+
+function onBulkPlatformChange() {
+  const platform = (document.getElementById('url_bulk_platform') || {}).value || '';
+  // Apply the global platform to every row that doesn't have an explicit override.
+  URL_BULK_ROWS.forEach(function(r) {
+    if (!r._overridden) r.platform = platform;
+  });
+  renderBulkUrlList_();
+}
+
+function loadBulkUrlsFromTextarea() {
+  const ta = document.getElementById('url_bulk_input');
+  if (!ta) return;
+  const lines = String(ta.value || '').split(/\r?\n/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 0; });
+  const platform = (document.getElementById('url_bulk_platform') || {}).value || '';
+  URL_BULK_ROWS = lines.map(function(u) { return { url: u, platform: platform, _overridden: false }; });
+  renderBulkUrlList_();
+}
+
+function addBulkUrlRow() {
+  const platform = (document.getElementById('url_bulk_platform') || {}).value || '';
+  URL_BULK_ROWS.push({ url: '', platform: platform, _overridden: false });
+  renderBulkUrlList_();
+}
+
+function removeBulkUrlRow(idx) {
+  URL_BULK_ROWS.splice(idx, 1);
+  renderBulkUrlList_();
+}
+
+function renderBulkUrlList_() {
+  const host = document.getElementById('url-list-host');
+  if (!host) return;
+  if (URL_BULK_ROWS.length === 0) {
+    host.innerHTML = '<div class="hint" style="padding:10px;">No URLs loaded yet. Paste URLs above and click "Load URLs into editable list", or click "+ Add URL row".</div>';
+    return;
+  }
+  const platforms = Object.keys((URL_BUILDER && URL_BUILDER.platformTemplates) || {});
+  const optsFor = function(sel) {
+    return ['<option value="">— pick a platform —</option>']
+      .concat(platforms.map(function(p) {
+        return '<option value="' + escapeAttr(p) + '"' + (p === sel ? ' selected' : '') + '>' + escapeHtml(p) + '</option>';
+      })).join('');
+  };
+  host.innerHTML = URL_BULK_ROWS.map(function(r, i) {
+    return '<div class="url-list-row">' +
+             '<div class="url-row-num">' + (i + 1) + '</div>' +
+             '<input type="url" value="' + escapeAttr(r.url) + '" placeholder="https://..." oninput="updateBulkUrlRow(' + i + ', this.value)">' +
+             '<select onchange="updateBulkUrlPlatform(' + i + ', this.value)">' + optsFor(r.platform || '') + '</select>' +
+             '<button type="button" class="url-row-remove" title="Remove" onclick="removeBulkUrlRow(' + i + ')">×</button>' +
+           '</div>';
+  }).join('');
+}
+
+function updateBulkUrlRow(idx, value) {
+  if (URL_BULK_ROWS[idx]) URL_BULK_ROWS[idx].url = value;
+}
+function updateBulkUrlPlatform(idx, value) {
+  if (URL_BULK_ROWS[idx]) {
+    URL_BULK_ROWS[idx].platform = value;
+    URL_BULK_ROWS[idx]._overridden = true;
+  }
+}
+
+function renderUrlUtcFields_() {
+  const u = URL_BUILDER.utc || {};
+  const src = (u.sourceOptions || []).map(function(o){ return '<option value="' + escapeAttr(o) + '">' + escapeHtml(o) + '</option>'; }).join('');
+  const geo = (u.geoOptions    || []).map(function(o){ return '<option value="' + escapeAttr(o) + '">' + escapeHtml(o) + '</option>'; }).join('');
+  const obj = (u.objectiveOptions || []).map(function(o){ return '<option value="' + escapeAttr(o) + '">' + escapeHtml(o) + '</option>'; }).join('');
+  const hotel = (u.hotelOptions || []).map(function(o){ return '<option value="' + escapeAttr(o) + '">' + escapeHtml(o) + '</option>'; }).join('');
+  const creative = (u.creativeTypeOptions || []).map(function(o){ return '<option value="' + escapeAttr(o) + '">' + escapeHtml(o) + '</option>'; }).join('');
+  const banned = (URL_BUILDER.utcBannedChars || []).filter(function(c){ return c !== '\n' && c !== '\r' && c !== '\t'; }).map(function(c){return '"' + c + '"';}).join(' ');
+  const freeTextHint = '<div class="hint">No ' + banned + ' — these would break the UTM string.</div>';
+  const guardAttrs = ' onkeypress="guardUtcFreeText(event)" onpaste="guardUtcFreeTextPaste(event)" oninput="trimUtcFreeTextInput(this)"';
+  return (
+    '<div class="field-grid">' +
+      cell_(1, 'Destination URL', '(http:// or https://, no query string)', '<input type="url" id="url_destinationUrl" placeholder="https://www.sandals.com/sandals-saint-vincent/">', true) +
+      cell_(2, 'UTM Source', '(lowercase, no special chars)', '<select id="url_source"><option value="">— pick —</option>' + src + '</select>') +
+      cell_(3, 'Campaign Name', '(free-form)', '<input type="text" id="url_campaign" placeholder="Always On"' + guardAttrs + '>' + freeTextHint) +
+      cell_(4, 'Geo', '', '<select id="url_geo"><option value="">— pick —</option>' + geo + '</select>') +
+      cell_(5, 'Objective', '(drives funnel level)', '<select id="url_objective"><option value="">— pick —</option>' + obj + '</select>') +
+      cell_(6, 'Influencer Handle', '(free-form)', '<input type="text" id="url_influencer" placeholder="Giselle Langley"' + guardAttrs + '>' + freeTextHint) +
+      cell_(7, 'Hotel Code', '(3-letter code)', '<select id="url_hotel"><option value="">— pick —</option>' + hotel + '</select>') +
+      cell_(8, 'Creative Type', '', '<select id="url_creativeType"><option value="">— pick —</option>' + creative + '</select>') +
+      cell_(9, 'Asset Version', '(free-form, usually numeric)', '<input type="text" id="url_assetVersion" placeholder="1"' + guardAttrs + '>' + freeTextHint) +
+      cell_(10, 'Ad ID', '(free-form, long numeric ID)', '<input type="text" id="url_adId" placeholder="6886040162394"' + guardAttrs + '>' + freeTextHint) +
+    '</div>'
+  );
+}
+
+/** Block banned characters at the keypress level. */
+function guardUtcFreeText(event) {
+  const banned = (URL_BUILDER && URL_BUILDER.utcBannedChars) || ['?', '&', '#', '=', '/', '\\', '%', '|', '~', '"', "'", '<', '>'];
+  const ch = event.key;
+  if (!ch || ch.length > 1) return; // ignore arrow keys etc.
+  if (banned.indexOf(ch) !== -1) {
+    event.preventDefault();
+    const input = event.target;
+    flashFieldError_(input, 'Character "' + ch + '" is not allowed — it would break the UTM string.');
+  }
+}
+
+/** Scrub banned chars on paste. */
+function guardUtcFreeTextPaste(event) {
+  const banned = (URL_BUILDER && URL_BUILDER.utcBannedChars) || [];
+  const clipboardData = (event.clipboardData || window.clipboardData);
+  if (!clipboardData) return;
+  const text = clipboardData.getData('text') || '';
+  const hasBanned = banned.some(function(c) { return text.indexOf(c) !== -1; });
+  if (!hasBanned) return;
+  event.preventDefault();
+  let cleaned = text;
+  banned.forEach(function(c) { cleaned = cleaned.split(c).join(''); });
+  const input = event.target;
+  const start = input.selectionStart || input.value.length;
+  const end   = input.selectionEnd || input.value.length;
+  input.value = input.value.slice(0, start) + cleaned + input.value.slice(end);
+  flashFieldError_(input, 'Pasted text had banned characters — they were stripped.');
+}
+
+/** Safety net on every input event — if the value somehow contains a banned char (e.g. programmatic fill), scrub it. */
+function trimUtcFreeTextInput(input) {
+  const banned = (URL_BUILDER && URL_BUILDER.utcBannedChars) || [];
+  let v = input.value;
+  let changed = false;
+  banned.forEach(function(c) {
+    if (v.indexOf(c) !== -1) { v = v.split(c).join(''); changed = true; }
+  });
+  if (changed) input.value = v;
+}
+
+function flashFieldError_(input, message) {
+  if (!input) return;
+  input.style.outline = '2px solid var(--vn-fail-fg)';
+  const statusEl = document.getElementById('url-status');
+  if (statusEl) statusEl.innerHTML = '<span class="fail">' + escapeHtml(message) + '</span>';
+  setTimeout(function() { input.style.outline = ''; }, 600);
+}
+
+function cell_(num, label, note, inner, dbl) {
+  const cls = 'field-cell' + (dbl ? ' dbl' : '');
+  return '<div class="' + cls + '">' +
+           '<div class="field-header"><span class="field-num">' + num + '</span>' +
+             '<span class="field-label">' + escapeHtml(label) + (note ? ' <span class="field-note">' + escapeHtml(note) + '</span>' : '') + '</span>' +
+           '</div>' +
+           inner +
+         '</div>';
+}
+
+function readUrlBuilderInput_() {
+  const brand = (document.getElementById('url_brand') || {}).value || '';
+  if (!brand) return null;
+  const destinationUrl = (document.getElementById('url_destinationUrl') || {}).value || '';
+  if (brand === 'Unique Vacations Inc.') {
+    return {
+      brand: brand,
+      destinationUrl: destinationUrl,
+      source:        (document.getElementById('url_source')       || {}).value || '',
+      campaign:      (document.getElementById('url_campaign')     || {}).value || '',
+      geo:           (document.getElementById('url_geo')          || {}).value || '',
+      objective:     (document.getElementById('url_objective')    || {}).value || '',
+      influencer:    (document.getElementById('url_influencer')   || {}).value || '',
+      hotel:         (document.getElementById('url_hotel')        || {}).value || '',
+      creativeType:  (document.getElementById('url_creativeType') || {}).value || '',
+      assetVersion:  (document.getElementById('url_assetVersion') || {}).value || '',
+      adId:          (document.getElementById('url_adId')         || {}).value || ''
+    };
+  }
+  return {
+    brand: brand,
+    destinationUrl: destinationUrl,
+    platform: (document.getElementById('url_platform') || {}).value || ''
+  };
+}
+
+function runUrlBuild() {
+  const brand = (document.getElementById('url_brand') || {}).value || '';
+  if (!brand) { setStatus('url-status', '<span class="fail">Pick a brand first</span>'); return; }
+
+  // Determine mode (only product brands have the mode picker; UTC is always single)
+  const modeRadio = document.querySelector('input[name="url-mode"]:checked');
+  const mode = (modeRadio && modeRadio.value) || 'single';
+
+  let inputs = [];
+  if (brand !== 'Unique Vacations Inc.' && mode === 'bulk') {
+    if (!URL_BULK_ROWS || URL_BULK_ROWS.length === 0) {
+      setStatus('url-status', '<span class="fail">No URLs loaded. Paste URLs and click "Load URLs into editable list", or add rows manually.</span>');
+      return;
+    }
+    inputs = URL_BULK_ROWS.map(function(r) {
+      return { brand: brand, destinationUrl: r.url || '', platform: r.platform || '' };
+    });
+    const missingUrl = inputs.find(function(x) { return !x.destinationUrl; });
+    if (missingUrl) { setStatus('url-status', '<span class="fail">One or more rows have no Destination URL.</span>'); return; }
+    const missingPlat = inputs.find(function(x) { return !x.platform; });
+    if (missingPlat) { setStatus('url-status', '<span class="fail">One or more rows have no Platform — set the global platform above or pick per-row.</span>'); return; }
+  } else {
+    const input = readUrlBuilderInput_();
+    if (!input) { setStatus('url-status', '<span class="fail">Pick a brand first</span>'); return; }
+    if (!input.destinationUrl) { setStatus('url-status', '<span class="fail">Destination URL is required</span>'); return; }
+    inputs = [input];
+  }
+
+  setStatus('url-status', '<span class="spinner"></span> Building ' + inputs.length + ' URL' + (inputs.length === 1 ? '' : 's') + ' and checking destination liveness…');
+  document.getElementById('url-results').innerHTML = '';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res || !res.ok) { setStatus('url-status', '<span class="fail">Build failed: ' + escapeHtml((res && res.error) || 'unknown error') + '</span>'); return; }
+      // For bulk mode, replace results (don't append) so the per-row table reflects the latest build set.
+      if (mode === 'bulk') {
+        urlLastResults = (res.results || []).slice();
+      } else {
+        urlLastResults = (urlLastResults || []).concat(res.results || []);
+      }
+      renderUrlResults();
+      const built = (res.results || []);
+      const okCount   = built.filter(function(r){ return r.ok; }).length;
+      const failCount = built.length - okCount;
+      const liveCount = built.filter(function(r){ return r.ok && r.liveness && r.liveness.alive; }).length;
+      const deadCount = okCount - liveCount;
+      setStatus('url-status',
+        '<span class="pass">' + okCount + ' built</span>' +
+        (failCount ? ' · <span class="fail">' + failCount + ' failed</span>' : '') +
+        ' · <span class="pass">' + liveCount + ' LIVE</span>' +
+        (deadCount ? ' · <span class="fail">' + deadCount + ' DEAD</span>' : '')
+      );
+    })
+    .withFailureHandler(function(err) {
+      setStatus('url-status', '<span class="fail">' + escapeHtml(err.message || err) + '</span>');
+    })
+    .runUrlBuilder(inputs);
+}
+
+
+function renderUrlResults() {
+  const wrap = document.getElementById('url-results');
+  if (!wrap) return;
+  if (!urlLastResults || urlLastResults.length === 0) { wrap.innerHTML = ''; return; }
+
+  // Strip the leading "?" from the UTM string column (spec'd to keep the
+  // full URL with "?" but show the clean parameter string on its own).
+  const stripLeadingQ = function(s) { return String(s || '').replace(/^\?/, ''); };
+
+  // ---- Detect platforms across the result set so we can decide whether to
+  //      render a single yellow callout above the table OR per-row instructions.
+  const platformsSeen = {};
+  urlLastResults.forEach(function(r) {
+    if (!r || !r.ok) return;
+    const p = (r.input && r.input.platform) || '';
+    if (p) platformsSeen[p] = true;
+  });
+  const uniquePlatforms = Object.keys(platformsSeen);
+  const singlePlatform = uniquePlatforms.length === 1 ? uniquePlatforms[0] : null;
+  const platformInstr  = (URL_BUILDER && URL_BUILDER.platformInstructions) || {};
+
+  // ---- Build the implementation-instructions block ----
+  let instructionsBlock = '';
+  if (singlePlatform) {
+    const inst = platformInstr[singlePlatform] || {};
+    const colName = inst.column || 'UTM String';
+    const colLetter = (colName === 'Full URL') ? 'A' : 'B';
+    let screenshotHtml = '';
+    if (inst.screenshotUrl) {
+      screenshotHtml =
+        '<div class="utm-instr-screenshot">' +
+          '<img src="' + escapeAttr(inst.screenshotUrl) + '" alt="Where to paste in ' + escapeAttr(singlePlatform) + '" onerror="this.parentNode.innerHTML=\'<div class=\\\'utm-instr-screenshot-empty\\\'>Screenshot URL is set but the image could not load. Make sure the file is publicly viewable in Drive (Anyone with link → Viewer) and uses the format <code>https://drive.google.com/uc?id=FILE_ID&export=view</code>.</div>\'">' +
+          '<div class="utm-instr-screenshot-caption">Visual example — ' + escapeHtml(singlePlatform) + '</div>' +
+        '</div>';
+    } else {
+      screenshotHtml =
+        '<div class="utm-instr-screenshot-empty">' +
+          '<strong>Tip:</strong> Add a visual example for ' + escapeHtml(singlePlatform) + ' by setting <code>screenshotUrl</code> for "' + escapeHtml(singlePlatform) + '" inside <code>URL_BUILDER_PLATFORM_INSTRUCTIONS</code> in <code>Code.gs</code>. Use a publicly-viewable Drive link in the form <code>https://drive.google.com/uc?id=&lt;FILE_ID&gt;&amp;export=view</code>.' +
+        '</div>';
+    }
+    instructionsBlock =
+      '<div class="utm-instr-box">' +
+        '<div class="utm-instr-title">Implementation instructions · <span class="utm-instr-platform">' + escapeHtml(singlePlatform) + '</span></div>' +
+        '<div>Copy <strong>' + escapeHtml(colName) + ' (column ' + colLetter + ')</strong> from the table below.</div>' +
+        '<div style="margin-top:6px;">' + escapeHtml(inst.full || '') + '</div>' +
+        screenshotHtml +
+      '</div>';
+  } else if (uniquePlatforms.length > 1) {
+    instructionsBlock =
+      '<div class="utm-multi-platform-note">' +
+        '<strong>Multiple platforms in this batch.</strong> Specific implementation instructions for each platform are included in the table below (Implementation column). ' +
+        'Each row tells you which column to copy and where to paste it.' +
+      '</div>';
+  }
+
+  // ---- Build the table rows ----
+  const showInstrCol = !singlePlatform && uniquePlatforms.length > 1;
+  const totalCols = showInstrCol ? 12 : 11;
+
+  const rowsHtml = urlLastResults.map(function(r, i) {
+    if (!r.ok) {
+      return '<tr>' +
+               '<td>' + (i + 1) + '</td>' +
+               '<td class="col-error" colspan="' + (totalCols - 1) + '">ERROR — ' + escapeHtml(r.error || 'unknown error') + '</td>' +
+             '</tr>';
+    }
+    const b = r.breakout || {};
+    const live = r.liveness || {};
+    const statusLabel = live.alive ? 'LIVE' : 'DEAD';
+    const statusClass = live.alive ? 'live' : 'dead';
+    const statusCode  = live.code ? String(live.code) : '—';
+    const platform = (r.input && r.input.platform) || '';
+    const inst = platformInstr[platform] || {};
+    const colName = inst.column || '';
+    const colLetter = (colName === 'Full URL') ? 'A' : (colName === 'UTM String' ? 'B' : '');
+    const platformCell = '<td class="col-platform">' + escapeHtml(platform || '—') + '</td>';
+    const instrCell = showInstrCol
+      ? '<td class="col-instructions"><strong>Copy ' + escapeHtml(colName) + (colLetter ? ' (col ' + colLetter + ')' : '') + '</strong>: ' + escapeHtml(inst.short || '') + '</td>'
+      : '';
+    return '<tr>' +
+             '<td>' + (i + 1) + '</td>' +
+             '<td>' + escapeHtml(r.fullUrl) + '</td>' +
+             '<td>' + escapeHtml(stripLeadingQ(r.utmString)) + '</td>' +
+             platformCell +
+             instrCell +
+             '<td>' + escapeHtml(b.source || '—') + '</td>' +
+             '<td>' + escapeHtml(b.medium || '—') + '</td>' +
+             '<td>' + escapeHtml(b.campaign || '—') + '</td>' +
+             '<td>' + escapeHtml(b.term || '—') + '</td>' +
+             '<td>' + escapeHtml(b.content || '—') + '</td>' +
+             '<td class="status-cell ' + statusClass + '">' + statusLabel + '</td>' +
+             '<td class="col-code">' + statusCode + '</td>' +
+           '</tr>';
+  }).join('');
+
+  const headerRow =
+    '<thead><tr>' +
+      '<th>#</th>' +
+      '<th>Full URL</th>' +
+      '<th>UTM String</th>' +
+      '<th>Platform</th>' +
+      (showInstrCol ? '<th>Implementation</th>' : '') +
+      '<th>Source</th>' +
+      '<th>Medium</th>' +
+      '<th>Campaign</th>' +
+      '<th>Term</th>' +
+      '<th>Content</th>' +
+      '<th>Liveness</th>' +
+      '<th>Code</th>' +
+    '</tr></thead>';
+
+  const table =
+    instructionsBlock +
+    '<div class="utm-table-wrap">' +
+      '<table class="utm-table">' +
+        headerRow +
+        '<tbody>' + rowsHtml + '</tbody>' +
+      '</table>' +
+    '</div>' +
+    '<div style="margin-top:12px;">' +
+      '<button type="button" class="btn" onclick="copyUrlBuilderAll()">Copy all URLs</button>' +
+      '<button type="button" class="btn accent" onclick="exportUrlBuilderToNewFile()">Export to new Google Sheet</button>' +
+      '<button type="button" class="btn secondary" onclick="downloadUrlBuilderCsv()">Download CSV</button>' +
+    '</div>';
+  wrap.innerHTML = table;
+}
+
+function copyUrlBuilderAll() {
+  if (!urlLastResults || urlLastResults.length === 0) return;
+  const urls = urlLastResults.filter(function(r){ return r.ok; }).map(function(r){ return r.fullUrl; });
+  if (urls.length === 0) return;
+  writeToClipboard(urls.join('\n'), 'url-status', urls.length + ' URL' + (urls.length === 1 ? '' : 's'));
+}
+
+function exportUrlBuilderToNewFile() {
+  if (!urlLastResults || urlLastResults.length === 0) return;
+  setStatus('url-status', '<span class="spinner"></span> Creating a new Google Sheet…');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.ok) {
+        const opened = tryOpenNewTab(res.url);
+        setStatus('url-status',
+          '<span class="pass">Created "' + escapeHtml(res.name) + '" with ' + res.count + ' rows.</span> ' +
+          (opened ? '<span class="hint">(opened in a new tab)</span>' : '<a href="' + escapeAttr(res.url) + '" target="_blank" rel="noopener">Open it ↗</a>')
+        );
+      } else {
+        setStatus('url-status', '<span class="fail">Export failed: ' + escapeHtml((res && res.error) || 'unknown error') + '</span>');
+      }
+    })
+    .withFailureHandler(function(err) { setStatus('url-status', '<span class="fail">' + escapeHtml(err.message || err) + '</span>'); })
+    .exportUrlBuilderToNewSheet(urlLastResults);
+}
+
+function downloadUrlBuilderCsv() {
+  if (!urlLastResults || urlLastResults.length === 0) return;
+  const platformInstr = (URL_BUILDER && URL_BUILDER.platformInstructions) || {};
+  // Detect single-platform mode for the CSV preamble (screenshot URL note)
+  const platformsSeen = {};
+  urlLastResults.forEach(function(r) {
+    if (!r || !r.ok) return;
+    const p = (r.input && r.input.platform) || '';
+    if (p) platformsSeen[p] = true;
+  });
+  const uniquePlatforms = Object.keys(platformsSeen);
+
+  const header = ['Full URL', 'UTM String', 'Platform', 'Implementation Instructions', 'Source', 'Medium', 'Campaign', 'Term', 'Content', 'Liveness', 'Status Code', 'Error / Reason'];
+  const rows = urlLastResults.map(function(r) {
+    const b = r.breakout || {};
+    const live = r.liveness || {};
+    const platform = (r.input && r.input.platform) || '';
+    const inst = platformInstr[platform] || {};
+    return [
+      r.fullUrl || '',
+      (r.utmString || '').replace(/^\?/, ''),
+      platform,
+      inst.full || '',
+      b.source || '', b.medium || '', b.campaign || '', b.term || '', b.content || '',
+      r.error ? '' : (live.alive ? 'LIVE' : 'DEAD'),
+      r.error ? '' : String(live.code || ''),
+      r.error || (live.alive ? '' : (live.reason || ''))
+    ];
+  });
+
+  // If single platform, prepend a comment header that points to the screenshot
+  // so users opening the CSV in Excel see the visual reference.
+  let preamble = '';
+  if (uniquePlatforms.length === 1) {
+    const inst = platformInstr[uniquePlatforms[0]] || {};
+    preamble = '# Platform: ' + uniquePlatforms[0] + '\n' +
+               '# What to copy: ' + (inst.column || '') + '\n' +
+               '# Where to paste: ' + (inst.full || '') + '\n' +
+               (inst.screenshotUrl ? '# Visual example: ' + inst.screenshotUrl + '\n' : '') +
+               '\n';
+  }
+  const csv = preamble +
+              header.map(csvField).join(',') + '\n' +
+              rows.map(function(row) { return row.map(csvField).join(','); }).join('\n');
+  downloadCsv('utm-builder-' + timestamp() + '.csv', csv);
+  setStatus('url-status', '<span class="pass">Downloaded CSV with ' + rows.length + ' row' + (rows.length === 1 ? '' : 's') + '</span>');
+}
+
+function clearUrlBuilder() {
+  const brandSel = document.getElementById('url_brand');
+  if (brandSel) brandSel.value = '';
+  const host = document.getElementById('url-fields-host');
+  if (host) { host.style.display = 'none'; host.innerHTML = ''; }
+  document.getElementById('url-status').innerHTML = '';
+  document.getElementById('url-results').innerHTML = '';
+  const hint = document.getElementById('url_brand_hint');
+  if (hint) hint.textContent = '';
+  urlLastResults = null;
+  URL_BULK_ROWS = [];
+}
+
+// ============================================================
+// URL QA — paste/upload existing URLs and validate against templates
+// ============================================================
+let urlQALastResults = null;
+
+function handleUrlQAFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('url-qa-file-status');
+  status.textContent = 'Reading ' + file.name + '…';
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (ext === 'xlsx' || ext === 'xls') {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const sheetName = wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        const flat = [];
+        rows.forEach(function(r) { (r || []).forEach(function(c) {
+          const s = String(c || '').trim();
+          if (s) flat.push(s);
+        }); });
+        document.getElementById('url-qa-input').value = flat.join('\n');
+        status.innerHTML = '<span class="pass">Loaded ' + flat.length + ' value' + (flat.length === 1 ? '' : 's') + ' from ' + escapeHtml(file.name) + '.</span>';
+      } catch (err) {
+        status.innerHTML = '<span class="fail">Failed to read XLSX: ' + escapeHtml(err.message || err) + '</span>';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const text = e.target.result;
+        const rows = parseCsvSimple(text);
+        const flat = [];
+        rows.forEach(function(r) { (r || []).forEach(function(c) {
+          const s = String(c || '').trim();
+          if (s) flat.push(s);
+        }); });
+        document.getElementById('url-qa-input').value = flat.join('\n');
+        status.innerHTML = '<span class="pass">Loaded ' + flat.length + ' value' + (flat.length === 1 ? '' : 's') + ' from ' + escapeHtml(file.name) + '.</span>';
+      } catch (err) {
+        status.innerHTML = '<span class="fail">Failed to read file: ' + escapeHtml(err.message || err) + '</span>';
+      }
+    };
+    reader.readAsText(file);
+  }
+}
+
+function populateUrlQAPlatformPicker() {
+  const platSel = document.getElementById('url-qa-platform');
+  if (platSel && URL_BUILDER) {
+    const platforms = Object.keys(URL_BUILDER.platformTemplates || {});
+    platSel.innerHTML = '<option value="">— pick a platform —</option>' +
+      platforms.map(function(p) { return '<option value="' + escapeAttr(p) + '">' + escapeHtml(p) + '</option>'; }).join('');
+  }
+  const brandSel = document.getElementById('url-qa-brand');
+  if (brandSel && URL_BUILDER) {
+    const brands = URL_BUILDER.supportedBrands || [];
+    brandSel.innerHTML = '<option value="">— pick a brand —</option>' +
+      brands.map(function(b) { return '<option value="' + escapeAttr(b) + '">' + escapeHtml(b) + '</option>'; }).join('');
+  }
+}
+
+function onUrlQABrandChange() {
+  const brand = (document.getElementById('url-qa-brand') || {}).value || '';
+  const platWrap = document.getElementById('url-qa-platform-wrap');
+  const utcHint  = document.getElementById('url-qa-utc-hint');
+  if (!brand) {
+    if (platWrap) platWrap.style.display = 'none';
+    if (utcHint)  utcHint.style.display = 'none';
+    return;
+  }
+  if (brand === 'Unique Vacations Inc.') {
+    if (platWrap) platWrap.style.display = 'none';
+    if (utcHint)  utcHint.style.display = '';
+  } else {
+    if (platWrap) platWrap.style.display = '';
+    if (utcHint)  utcHint.style.display = 'none';
+  }
+}
+
+function runUrlQA() {
+  const brand = (document.getElementById('url-qa-brand') || {}).value || '';
+  if (!brand) {
+    setStatus('url-qa-status', '<span class="fail">Pick a brand first — Unique Vacations Inc. and product brands use different UTM formats.</span>');
+    return;
+  }
+  let expectedPlatform = '';
+  let validatorLabel   = '';
+  if (brand === 'Unique Vacations Inc.') {
+    validatorLabel = 'Unique Vacations Inc. composite-campaign template';
+  } else {
+    expectedPlatform = (document.getElementById('url-qa-platform') || {}).value || '';
+    if (!expectedPlatform) {
+      setStatus('url-qa-status', '<span class="fail">Pick a platform first — product brands use platform-driven UTM templates.</span>');
+      return;
+    }
+    validatorLabel = expectedPlatform + ' template';
+  }
+  const ta = document.getElementById('url-qa-input');
+  const text = (ta && ta.value) || '';
+  const urls = text.split(/\r?\n/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 0; });
+  if (urls.length === 0) {
+    setStatus('url-qa-status', '<span class="fail">Paste at least one URL or upload a file.</span>');
+    return;
+  }
+  setStatus('url-qa-status', '<span class="spinner"></span> Validating ' + urls.length + ' URL' + (urls.length === 1 ? '' : 's') + ' against the ' + escapeHtml(validatorLabel) + '…');
+  document.getElementById('url-qa-results').innerHTML = '';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res || !res.ok) {
+        setStatus('url-qa-status', '<span class="fail">QA failed: ' + escapeHtml((res && res.error) || 'unknown error') + '</span>');
+        return;
+      }
+      urlQALastResults = res.results || [];
+      renderUrlQAResults();
+      const passCount = urlQALastResults.filter(function(r){ return r.status === 'PASS'; }).length;
+      const failCount = urlQALastResults.length - passCount;
+      setStatus('url-qa-status',
+        '<span class="pass">' + passCount + ' PASS</span>' +
+        (failCount ? ' · <span class="fail">' + failCount + ' FAIL</span>' : '') +
+        ' · <span class="hint">checked against ' + escapeHtml(validatorLabel) + '</span>'
+      );
+      const exportBtn = document.getElementById('url-qa-export-btn');
+      const csvBtn    = document.getElementById('url-qa-csv-btn');
+      if (exportBtn) exportBtn.disabled = false;
+      if (csvBtn) csvBtn.disabled = false;
+    })
+    .withFailureHandler(function(err) {
+      setStatus('url-qa-status', '<span class="fail">' + escapeHtml(err.message || err) + '</span>');
+    })
+    .runUrlQA(urls, brand, expectedPlatform);
+}
+
+function renderUrlQAResults() {
+  const wrap = document.getElementById('url-qa-results');
+  if (!wrap) return;
+  if (!urlQALastResults || urlQALastResults.length === 0) { wrap.innerHTML = ''; return; }
+  const rowsHtml = urlQALastResults.map(function(r, i) {
+    const f = r.found || {};
+    const statusClass = r.status === 'PASS' ? 'live' : 'dead';
+    const issuesHtml = (r.issues && r.issues.length)
+      ? r.issues.map(function(s){ return escapeHtml(s); }).join(' · ')
+      : '<span style="color:var(--vn-muted);">—</span>';
+    return '<tr>' +
+             '<td class="status-cell ' + statusClass + '">' + r.status + '</td>' +
+             '<td>' + (i + 1) + '</td>' +
+             '<td>' + escapeHtml(r.url) + '</td>' +
+             '<td>' + escapeHtml(r.brand || '—') + '</td>' +
+             '<td>' + escapeHtml(r.platform || '—') + '</td>' +
+             '<td>' + escapeHtml(f.utm_source || '—') + '</td>' +
+             '<td>' + escapeHtml(f.utm_medium || '—') + '</td>' +
+             '<td>' + escapeHtml(f.utm_campaign || '—') + '</td>' +
+             '<td>' + escapeHtml(f.utm_content || '—') + '</td>' +
+             '<td>' + escapeHtml(f.utm_term || '—') + '</td>' +
+             '<td class="col-instructions">' + issuesHtml + '</td>' +
+           '</tr>';
+  }).join('');
+  wrap.innerHTML =
+    '<div class="utm-table-wrap">' +
+      '<table class="utm-table">' +
+        '<thead><tr>' +
+          '<th>Status</th>' +
+          '<th>#</th>' +
+          '<th>URL</th>' +
+          '<th>Brand</th>' +
+          '<th>Platform</th>' +
+          '<th>utm_source</th>' +
+          '<th>utm_medium</th>' +
+          '<th>utm_campaign</th>' +
+          '<th>utm_content</th>' +
+          '<th>utm_term</th>' +
+          '<th>Issues</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rowsHtml + '</tbody>' +
+      '</table>' +
+    '</div>';
+}
+
+function clearUrlQA() {
+  const brandSel    = document.getElementById('url-qa-brand');
+  const platformSel = document.getElementById('url-qa-platform');
+  if (brandSel)    brandSel.value = '';
+  if (platformSel) platformSel.value = '';
+  onUrlQABrandChange();  // hide platform / utc hint
+  document.getElementById('url-qa-input').value = '';
+  document.getElementById('url-qa-file').value = '';
+  document.getElementById('url-qa-file-status').innerHTML = '';
+  document.getElementById('url-qa-status').innerHTML = '';
+  document.getElementById('url-qa-results').innerHTML = '';
+  urlQALastResults = null;
+  const exportBtn = document.getElementById('url-qa-export-btn');
+  const csvBtn    = document.getElementById('url-qa-csv-btn');
+  if (exportBtn) exportBtn.disabled = true;
+  if (csvBtn)    csvBtn.disabled = true;
+}
+
+function exportUrlQAToNewFile() {
+  if (!urlQALastResults || urlQALastResults.length === 0) return;
+  setStatus('url-qa-status', '<span class="spinner"></span> Creating a new Google Sheet…');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.ok) {
+        const opened = tryOpenNewTab(res.url);
+        setStatus('url-qa-status',
+          '<span class="pass">Created "' + escapeHtml(res.name) + '" with ' + res.count + ' rows.</span> ' +
+          (opened ? '<span class="hint">(opened in a new tab)</span>' : '<a href="' + escapeAttr(res.url) + '" target="_blank" rel="noopener">Open it ↗</a>')
+        );
+      } else {
+        setStatus('url-qa-status', '<span class="fail">Export failed: ' + escapeHtml((res && res.error) || 'unknown error') + '</span>');
+      }
+    })
+    .withFailureHandler(function(err) { setStatus('url-qa-status', '<span class="fail">' + escapeHtml(err.message || err) + '</span>'); })
+    .exportUrlQAToNewSheet(urlQALastResults);
+}
+
+function downloadUrlQACsv() {
+  if (!urlQALastResults || urlQALastResults.length === 0) return;
+  const header = ['Status', 'URL', 'Brand', 'Platform', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'Issues'];
+  const rows = urlQALastResults.map(function(r) {
+    const f = r.found || {};
+    return [
+      r.status || '', r.url || '', r.brand || '', r.platform || '',
+      f.utm_source || '', f.utm_medium || '', f.utm_campaign || '', f.utm_content || '', f.utm_term || '',
+      (r.issues || []).join(' | ')
+    ];
+  });
+  const csv = header.map(csvField).join(',') + '\n' + rows.map(function(row){ return row.map(csvField).join(','); }).join('\n');
+  downloadCsv('url-qa-' + timestamp() + '.csv', csv);
+  setStatus('url-qa-status', '<span class="pass">Downloaded CSV with ' + rows.length + ' row' + (rows.length === 1 ? '' : 's') + '</span>');
+}
+
+/**
+ * Download a CSV template for bulk edits. Columns:
+ *   - Current Name   (required)
+ *   - Level          (optional hint; auto-detected if blank)
+ *   - One column per overridable field key across all levels, labelled "<Label> [fieldKey]"
+ * Users fill in override cells and leave others blank to preserve the existing value.
+ */
+function downloadBulkTemplate() {
+  const fields = allFieldsAcrossLevels();
+  const header = ['Current Name', 'Level (optional)'];
+  const keys = [];
+  fields.forEach(function(f) {
+    header.push(f.label + ' [' + f.key + ']');
+    keys.push(f.key);
+  });
+  const sampleRow = new Array(header.length).fill('');
+  sampleRow[0] = 'R#:16 | Test | Darkposted | Brand Carousel | 1x1 | 30 | BC: Love that the @beachesresorts | CTA: Book Now | LP: Owned ~ Air Fryer (ADZ-112) | 10/01/25 | 11/30/25 | Enocha Brown | BTC';
+  sampleRow[1] = '';   // Level auto-detects
+  // Example: change start date on this row
+  const startIdx = header.indexOf('Start Date [startDate]');
+  if (startIdx !== -1) sampleRow[startIdx] = '12/01/25';
+  const noteRow = new Array(header.length).fill('');
+  noteRow[0] = '# Fill the "Current Name" column, then populate override columns for rows you want changed. Leave a cell blank to keep the existing value. Delete this comment row before uploading.';
+  const csv = [header, noteRow, sampleRow].map(function(row){ return row.map(csvField).join(','); }).join('\n');
+  downloadCsv('taxonomy-bulk-edit-template.csv', csv);
+  setStatus('bulk-status', '<span class="pass">Template downloaded</span> — fill in Current Name + any override columns, then upload.');
+}
+
+function handleBulkFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('bulk-file-status');
+  status.textContent = 'Reading ' + file.name + '…';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const rows = parseCsvSimple(e.target.result);
+      if (rows.length < 2) { status.innerHTML = '<span class="fail">CSV has no data rows</span>'; return; }
+      const header = rows[0].map(function(h) { return String(h || '').trim(); });
+      const keyByIdx = {};
+      header.forEach(function(h, i) {
+        const m = h.match(/\[([A-Za-z0-9_]+)\]\s*$/);
+        if (m) keyByIdx[i] = m[1];
+      });
+      const nameIdx  = header.findIndex(function(h) { return /^current name$/i.test(h); });
+      if (nameIdx === -1) { status.innerHTML = '<span class="fail">Template must have a "Current Name" column</span>'; return; }
+      const names = [];
+      const overrides = {};
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length === 0) continue;
+        const name = String(row[nameIdx] || '').trim();
+        if (!name || name.indexOf('#') === 0) continue; // skip comment rows
+        names.push(name);
+        const rowOverrides = {};
+        Object.keys(keyByIdx).forEach(function(colIdx) {
+          const key = keyByIdx[colIdx];
+          const val = String(row[colIdx] || '').trim();
+          if (val !== '') rowOverrides[key] = val;
+        });
+        if (Object.keys(rowOverrides).length > 0) overrides[name] = rowOverrides;
+      }
+      document.getElementById('bulk-input').value = names.join('\n');
+      bulkCsvOverrides = overrides;
+      status.innerHTML = '<span class="pass">Loaded ' + names.length + ' rows · ' + Object.keys(overrides).length + ' with per-row overrides</span>';
+    } catch (err) {
+      status.innerHTML = '<span class="fail">Failed to read CSV: ' + escapeHtml(err.message || err) + '</span>';
+    }
+  };
+  reader.readAsText(file);
+}
+
+/** Minimal RFC-4180-ish CSV parser (handles quoted fields and embedded commas/newlines). */
+function parseCsvSimple(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"' && text[i+1] === '"') { field += '"'; i++; }
+      else if (c === '"') { inQuotes = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') { inQuotes = true; }
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i+1] === '\n') i++;
+        row.push(field); field = '';
+        rows.push(row); row = [];
+      } else { field += c; }
+    }
+  }
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  return rows.filter(function(r) { return r.length > 1 || (r.length === 1 && r[0] !== ''); });
+}
+
+// ============================================================
+// QA CHECK
+// ============================================================
+function handleQAFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('qa-file-status');
+  status.textContent = 'Reading ' + file.name + '…';
+  const reader = new FileReader();
+  const isXlsx = /\.xlsx?$/i.test(file.name);
+  reader.onload = function(e) {
+    try {
+      let names = [];
+      if (isXlsx) {
+        if (typeof XLSX === 'undefined') { status.innerHTML = '<span class="fail">XLSX parser failed to load. Save as CSV and retry.</span>'; return; }
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        wb.SheetNames.forEach(function(sn) {
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+          rows.forEach(function(row) { row.forEach(function(cell) { const s = String(cell || '').trim(); if (s) names.push(s); }); });
+        });
+      } else {
+        const text = e.target.result;
+        text.split(/\r?\n/).forEach(function(line) {
+          line.split(',').forEach(function(cell) {
+            const s = cell.replace(/^"|"$/g, '').trim();
+            if (s) names.push(s);
+          });
+        });
+      }
+      document.getElementById('qa-input').value = names.join('\n');
+      status.innerHTML = '<span class="pass">Loaded ' + names.length + ' values from ' + escapeHtml(file.name) + '</span>';
+    } catch (err) {
+      status.innerHTML = '<span class="fail">Failed to read file: ' + escapeHtml(err.message || err) + '</span>';
+    }
+  };
+  if (isXlsx) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+}
+
+/**
+ * Render Taxonomy QA results as a SINGLE table in input order. Each row
+ * shows its level + the per-field breakdown (one column per taxonomy field
+ * across all levels present in the batch). Cells for fields that don't
+ * apply to a row's level show "—". Cells with validation issues are red.
+ *
+ * Input order is preserved — rows aren't grouped/sorted by level or status.
+ */
+function renderTaxonomyQAResults_(results) {
+  if (!results || results.length === 0) return '';
+
+  // Collect the union of fields across every level present in this batch
+  // (in level-appearance order, then field-appearance order within each).
+  // This is the column set for the table.
+  const levelsInBatch = [];
+  results.forEach(function(r) {
+    const lv = r.level;
+    if (lv && lv !== 'UNKNOWN' && levelsInBatch.indexOf(lv) === -1) {
+      levelsInBatch.push(lv);
+    }
+  });
+  const seenKeys = {};
+  const unionFields = [];
+  levelsInBatch.forEach(function(lv) {
+    ((TAXONOMY[lv] || {}).fields || []).forEach(function(fld) {
+      if (!seenKeys[fld.key]) {
+        seenKeys[fld.key] = true;
+        unionFields.push(fld);
+      }
+    });
+  });
+
+  const fieldHeaders = unionFields.map(function(fld) {
+    return '<th>' + escapeHtml(fld.label) + '</th>';
+  }).join('');
+
+  // Body rows in INPUT order (don't reorder by level or status)
+  const bodyRows = results.map(function(r, i) {
+    const statusClass = r.status === 'PASS' ? 'live' : 'dead';
+    const problemFields = {};
+    (r.fieldIssues || []).forEach(function(issue) {
+      if (issue && issue.field) problemFields[issue.field] = true;
+    });
+    const rowLevel = r.level || 'UNKNOWN';
+    const rowFieldKeys = {};
+    if (rowLevel !== 'UNKNOWN') {
+      ((TAXONOMY[rowLevel] || {}).fields || []).forEach(function(f) { rowFieldKeys[f.key] = true; });
+    }
+    const cells = unionFields.map(function(fld) {
+      if (!rowFieldKeys[fld.key]) {
+        return '<td class="qa-na-cell">—</td>';
+      }
+      const v = (r.values && r.values[fld.key] != null) ? String(r.values[fld.key]) : '';
+      const cls = problemFields[fld.key] ? 'qa-bad-cell' : '';
+      return '<td class="' + cls + '">' + escapeHtml(v) + '</td>';
+    }).join('');
+    const issuesText = r.issues && r.issues.length
+      ? r.issues.map(function(s){ return escapeHtml(s); }).join(' · ')
+      : '<span style="color:var(--vn-muted);">—</span>';
+    return '<tr>' +
+             '<td class="status-cell ' + statusClass + '">' + r.status + '</td>' +
+             '<td>' + (i + 1) + '</td>' +
+             '<td>' + escapeHtml(rowLevel) + '</td>' +
+             cells +
+             '<td class="col-instructions">' + issuesText + '</td>' +
+             '<td class="qa-full-name">' + escapeHtml(r.name) + '</td>' +
+           '</tr>';
+  }).join('');
+
+  return (
+    '<div class="utm-table-wrap">' +
+      '<table class="utm-table qa-fields-table">' +
+        '<thead><tr>' +
+          '<th>Status</th>' +
+          '<th>#</th>' +
+          '<th>Level</th>' +
+          fieldHeaders +
+          '<th>Issues</th>' +
+          '<th>Full Name</th>' +
+        '</tr></thead>' +
+        '<tbody>' + bodyRows + '</tbody>' +
+      '</table>' +
+    '</div>'
+  );
+}
+
+function runQA() {
+  const raw = document.getElementById('qa-input').value;
+  const names = raw.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
+  if (!names.length) { setStatus('qa-status', '<span class="fail">No names to check</span>'); return; }
+  setStatus('qa-status', '<span class="spinner"></span> Checking ' + names.length + ' name' + (names.length === 1 ? '' : 's') + '…');
+  document.getElementById('qa-results').innerHTML = '';
+  document.getElementById('qa-export-btn').disabled = true;
+  document.getElementById('qa-csv-btn').disabled = true;
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res.ok) { setStatus('qa-status', '<span class="fail">' + escapeHtml(res.error) + '</span>'); return; }
+      qaLastResults = res.results;
+      const passCount = res.results.filter(function(r){ return r.status === 'PASS'; }).length;
+      const failCount = res.results.length - passCount;
+      setStatus('qa-status',
+        '<span class="pass">' + passCount + ' pass</span> · ' +
+        '<span class="fail">' + failCount + ' fail</span> (of ' + res.results.length + ')'
+      );
+      document.getElementById('qa-results').innerHTML = renderTaxonomyQAResults_(res.results);
+      document.getElementById('qa-export-btn').disabled = false;
+      document.getElementById('qa-csv-btn').disabled = false;
+    })
+    .withFailureHandler(function(err) {
+      setStatus('qa-status', '<span class="fail">' + escapeHtml(err.message || err) + '</span>');
+    })
+    .runQA(names);
+}
+
+function exportQAToNewFile() {
+  if (!qaLastResults || !qaLastResults.length) return;
+  setStatus('qa-status', '<span class="spinner"></span> Creating a new Google Sheet with per-brand tabs…');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.ok) {
+        const opened = tryOpenNewTab(res.url);
+        setStatus('qa-status',
+          '<span class="pass">Created "' + escapeHtml(res.name) + '" with ' + (res.tabCount || 1) + ' tab' + ((res.tabCount || 1) === 1 ? '' : 's') + ' · ' + res.count + ' rows. </span>' +
+          (opened ? '<span class="hint">(opened in a new tab)</span>' : '<a href="' + escapeAttr(res.url) + '" target="_blank" rel="noopener">Open it ↗</a>')
+        );
+      } else {
+        setStatus('qa-status', '<span class="fail">Export failed: ' + escapeHtml((res && res.error) || 'unknown error') + '</span>');
+      }
+    })
+    .withFailureHandler(function(err) {
+      setStatus('qa-status', '<span class="fail">' + escapeHtml(err.message || err) + '</span>');
+    })
+    .exportQAResultsToNewSheet(qaLastResults);
+}
+
+function downloadQACsv() {
+  if (!qaLastResults || !qaLastResults.length) return;
+  const header = ['Name', 'Detected Level', 'Status', 'Issues'];
+  const rows = qaLastResults.map(function(r) { return [r.name, r.level, r.status, (r.issues || []).join('; ')]; });
+  const csv = header.map(csvField).join(',') + '\n' +
+              rows.map(function(row) { return row.map(csvField).join(','); }).join('\n');
+  downloadCsv('taxonomy-qa-' + timestamp() + '.csv', csv);
+  setStatus('qa-status', '<span class="pass">Downloaded CSV with ' + qaLastResults.length + ' row' + (qaLastResults.length === 1 ? '' : 's') + '</span>');
+}
+
+function clearQA() {
+  document.getElementById('qa-input').value = '';
+  document.getElementById('qa-file').value = '';
+  document.getElementById('qa-file-status').innerHTML = '';
+  document.getElementById('qa-status').innerHTML = '';
+  document.getElementById('qa-results').innerHTML = '';
+  document.getElementById('qa-export-btn').disabled = true;
+  document.getElementById('qa-csv-btn').disabled = true;
+  qaLastResults = null;
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function setStatus(id, html) { document.getElementById(id).innerHTML = html; }
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
+function mdyToIso(s) {
+  const m = String(s || '').trim().match(/^(\d{2})\/(\d{2})\/(\d{2})$/);
+  if (!m) return '';
+  return '20' + m[3] + '-' + m[1] + '-' + m[2];
+}
+
+function writeToClipboard(text, statusId, label) {
+  // Prefer the modern Clipboard API — it doesn't move focus or scroll the page.
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      function() { setStatus(statusId, '<span class="pass">Copied ' + label + ' to clipboard</span>'); },
+      function() { fallbackCopy_(text, statusId, label); }
+    );
+    return;
+  }
+  fallbackCopy_(text, statusId, label);
+}
+
+/** Last-resort copy via a hidden textarea. We capture and restore scroll
+ *  position so the focus shift to the temporary textarea doesn't visibly
+ *  bump the page up or down. */
+function fallbackCopy_(text, statusId, label) {
+  const scrollX = window.scrollX || window.pageXOffset || 0;
+  const scrollY = window.scrollY || window.pageYOffset || 0;
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;';
+  document.body.appendChild(ta);
+  ta.focus({ preventScroll: true });
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  document.body.removeChild(ta);
+  window.scrollTo(scrollX, scrollY);  // restore in case any browser moved it
+  if (ok) setStatus(statusId, '<span class="pass">Copied ' + label + ' to clipboard</span>');
+  else setStatus(statusId, '<span class="fail">Copy failed. Select the text manually.</span>');
+}
+
+function csvField(v) {
+  const s = String(v == null ? '' : v);
+  if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function downloadCsv(filename, text) {
+  const blob = new Blob(['\ufeff' + text], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+function timestamp() {
+  const d = new Date();
+  const pad = function(n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes());
+}
+
+function tryOpenNewTab(url) {
+  try {
+    const w = window.open(url, '_blank', 'noopener');
+    return !!w;
+  } catch (e) { return false; }
+}
+</script>
+</body>
+</html>
