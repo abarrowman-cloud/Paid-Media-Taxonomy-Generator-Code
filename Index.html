@@ -5,37 +5,44 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   /* =============================================================
-     Viral Nation theme
-     Primary:   #000000 / #FFFFFF
-     Secondary: #FF005C (pink), #FF6927 (orange), #FFC227 (yellow)
-     Font:      Proxima Nova (with Montserrat as web fallback)
+     Viral Nation · Brand System v1.3 (Atlantic)
+     Anchor:    #0F2A4A (navy) · 70% of surface
+     Neutral:   #FAFAFA / #FFFFFF · 25% of surface
+     Signal:    #B45309 (copper) · 5% of surface. Never inverted.
+     Type:      Inter (display + body + UI), JetBrains Mono (data only)
   ============================================================= */
   :root {
-    --vn-black:   #000000;
-    --vn-white:   #FFFFFF;
-    --vn-pink:    #FF005C;
-    --vn-orange:  #FF6927;
-    --vn-yellow:  #FFC227;
+    /* Brand palette remapped to VN v1.3 (Atlantic). Variable names kept so the
+       whole stylesheet re-skins from these tokens. Anchor navy replaces black;
+       copper is the single 5% signal (CTA / focus / active state). */
+    --vn-black:   #0F2A4A;   /* anchor navy — dominant brand surface */
+    --vn-white:   #FFFFFF;   /* paper */
+    --vn-pink:    #B45309;   /* copper — primary signal */
+    --vn-orange:  #B45309;   /* copper — secondary accent / left-rules */
+    --vn-yellow:  #D97706;   /* copper-light — accent on dark (eyebrow, strip) */
 
-    --vn-ink:     #111111;
-    --vn-muted:   #5A5A5A;
-    --vn-line:    #E3E3E3;
-    --vn-panel:   #F7F7F7;
-    --vn-soft:    #FAFAFA;
+    --vn-ink:     #0A0B14;   /* near-black body text */
+    --vn-muted:   #52525B;   /* neutral mid */
+    --vn-line:    #E5E5E5;   /* rule */
+    --vn-panel:   #F4F4F5;   /* faint panel */
+    --vn-soft:    #FAFAFA;   /* canvas */
     --vn-pass-bg: #E6F4E6;
     --vn-pass-fg: #0B7027;
     --vn-fail-bg: #FDE8E8;
     --vn-fail-fg: #C5221F;
-    --vn-warn-bg: #FFF4D6;
-    --vn-warn-fg: #7A5A00;
+    --vn-warn-bg: #FBF1E8;   /* faint copper tint */
+    --vn-warn-fg: #7C2D12;   /* copper-deep */
   }
 
   * { box-sizing: border-box; }
   body {
-    font-family: 'Proxima Nova', 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Inter', 'Inter Variable', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     font-size: 14px;
     margin: 0;
     padding: 0;
@@ -57,10 +64,12 @@
     gap: 14px;
     border-bottom: 4px solid var(--vn-yellow);
   }
-  header .brand-lockup { display: flex; align-items: center; gap: 12px; }
-  header h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; color: var(--vn-white); }
+  header .brand-lockup { display: flex; align-items: center; gap: 14px; }
+  header .vn-wordmark { height: 26px; width: auto; display: block; }
+  header .brand-divider { width: 1px; height: 22px; background: rgba(250,250,250,0.28); display: inline-block; }
+  header h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: var(--vn-white); }
   header h1 .accent { color: var(--vn-yellow); }
-  header .vn-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--vn-pink); display: inline-block; }
+  header .vn-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--vn-pink); display: inline-block; }
   header .meta { font-size: 12px; color: rgba(255,255,255,0.85); display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
   header .meta a { color: var(--vn-yellow); text-decoration: none; font-weight: 600; }
   header .meta a:hover { text-decoration: underline; }
@@ -86,9 +95,9 @@
     background: var(--vn-black);
     color: var(--vn-yellow);
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.16em;
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 600;
     padding: 6px 14px;
     text-align: center;
   }
@@ -98,12 +107,12 @@
     padding: 14px 10px;
     text-align: center;
     cursor: pointer;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--vn-muted);
     border-bottom: 3px solid transparent;
     user-select: none;
     transition: color 0.15s, border-color 0.15s;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     font-size: 13px;
     white-space: nowrap;
@@ -114,15 +123,15 @@
   .panel { display: none; padding: 24px; }
   .panel.active { display: block; }
 
-  h3 { margin: 0 0 10px 0; font-size: 15px; font-weight: 700; }
-  label { display: block; font-weight: 700; margin: 16px 0 5px; font-size: 12px; color: var(--vn-ink); text-transform: uppercase; letter-spacing: 0.4px; }
+  h3 { margin: 0 0 10px 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  label { display: block; font-weight: 600; margin: 16px 0 5px; font-size: 12px; color: var(--vn-ink); text-transform: uppercase; letter-spacing: 0.08em; }
   label .note { font-weight: 500; color: var(--vn-muted); font-size: 11px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
 
   input[type="text"], input[type="date"], input[type="url"], textarea, select {
     width: 100%;
     padding: 9px 11px;
     border: 1px solid var(--vn-line);
-    border-radius: 6px;
+    border-radius: 4px;
     font-size: 13px;
     font-family: inherit;
     background: var(--vn-white);
@@ -131,13 +140,13 @@
   input[type="text"]:focus, input[type="date"]:focus, input[type="url"]:focus, textarea:focus, select:focus {
     border-color: var(--vn-pink);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(255,0,92,0.12);
+    box-shadow: 0 0 0 2px rgba(180,83,9,0.18);
   }
   textarea { min-height: 70px; resize: vertical; }
 
   .checkboxes {
     border: 1px solid var(--vn-line);
-    border-radius: 6px;
+    border-radius: 4px;
     padding: 8px;
     max-height: 190px;
     overflow: auto;
@@ -153,29 +162,29 @@
     background: var(--vn-black);
     color: var(--vn-white);
     border: 0;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
-    font-weight: 700;
+    font-weight: 600;
     font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.06em;
     margin-top: 10px;
     margin-right: 6px;
     font-family: inherit;
     transition: transform 0.1s, box-shadow 0.15s;
   }
-  .btn:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .btn:hover { box-shadow: 0 2px 8px rgba(15,42,74,0.18); }
   .btn:active { transform: translateY(1px); }
   .btn.primary { background: var(--vn-pink); }
-  .btn.primary:hover { background: #e6004f; }
+  .btn.primary:hover { background: #7C2D12; }
   .btn.secondary { background: var(--vn-white); color: var(--vn-ink); border: 1px solid var(--vn-line); }
   .btn.secondary:hover { background: var(--vn-panel); }
   .btn.accent { background: var(--vn-yellow); color: var(--vn-black); }
-  .btn.accent:hover { background: #ffb300; }
+  .btn.accent:hover { background: #B45309; }
   .btn:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
 
-  .level-picker { margin-bottom: 16px; padding: 12px 14px; background: var(--vn-panel); border-radius: 6px; border-left: 4px solid var(--vn-orange); }
-  .level-picker strong { text-transform: uppercase; letter-spacing: 0.4px; font-size: 12px; font-weight: 700; }
+  .level-picker { margin-bottom: 16px; padding: 12px 14px; background: var(--vn-panel); border-radius: 4px; border-left: 4px solid var(--vn-orange); }
+  .level-picker strong { text-transform: uppercase; letter-spacing: 0.4px; font-size: 12px; font-weight: 600; }
   .level-picker label { display: inline-block; margin: 0 20px 0 0; font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 13px; }
   .level-picker input[type="radio"] { accent-color: var(--vn-pink); }
 
@@ -184,29 +193,29 @@
     padding: 12px;
     background: var(--vn-black);
     color: var(--vn-yellow);
-    border-radius: 6px;
+    border-radius: 4px;
     max-height: 380px;
     overflow: auto;
-    font-family: "SF Mono", Consolas, "Courier New", monospace;
+    font-family: "JetBrains Mono", "SF Mono", Consolas, "Courier New", monospace;
     font-size: 12px;
     white-space: pre-wrap;
     word-break: break-word;
     line-height: 1.55;
   }
   .status-bar { margin-top: 10px; font-size: 12px; color: var(--vn-muted); }
-  .pass { color: var(--vn-pass-fg); font-weight: 700; }
-  .fail { color: var(--vn-fail-fg); font-weight: 700; }
+  .pass { color: var(--vn-pass-fg); font-weight: 600; }
+  .fail { color: var(--vn-fail-fg); font-weight: 600; }
 
   .qa-row {
     padding: 10px 12px;
     border: 1px solid var(--vn-line);
-    border-radius: 6px;
+    border-radius: 4px;
     margin-bottom: 8px;
     background: var(--vn-white);
   }
   .qa-row.fail { border-left: 4px solid var(--vn-fail-fg); }
   .qa-row.pass { border-left: 4px solid var(--vn-pass-fg); }
-  .qa-name { font-family: "SF Mono", Consolas, monospace; font-size: 12px; word-break: break-word; color: var(--vn-ink); }
+  .qa-name { font-family: "JetBrains Mono", "SF Mono", Consolas, monospace; font-size: 12px; word-break: break-word; color: var(--vn-ink); }
   .qa-issues { margin-top: 5px; font-size: 12px; color: var(--vn-fail-fg); }
   .qa-issues li { margin-left: 18px; }
 
@@ -234,14 +243,14 @@
     padding: 2px 6px;
     border-radius: 3px;
   }
-  .field-actions:hover { background: rgba(255,0,92,0.08); }
+  .field-actions:hover { background: rgba(180,83,9,0.08); }
   .field-actions + .field-actions { margin-left: 8px; }
 
   .toggle-pill {
     display: inline-flex;
     background: var(--vn-panel);
     border: 1px solid var(--vn-line);
-    border-radius: 20px;
+    border-radius: 4px;
     padding: 3px;
     gap: 2px;
     margin-bottom: 6px;
@@ -250,10 +259,10 @@
     margin: 0;
     padding: 5px 14px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--vn-muted);
     cursor: pointer;
-    border-radius: 16px;
+    border-radius: 4px;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     transition: background 0.15s, color 0.15s;
@@ -261,7 +270,7 @@
   .toggle-pill input[type="radio"] { display: none; }
   .toggle-pill input[type="radio"]:checked + label { background: var(--vn-black); color: var(--vn-white); }
 
-  .vn-badge { display: inline-block; padding: 2px 8px; background: var(--vn-yellow); color: var(--vn-black); border-radius: 10px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; margin-left: 6px; }
+  .vn-badge { display: inline-block; padding: 2px 8px; background: var(--vn-yellow); color: var(--vn-black); border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-left: 6px; }
 
   #gen-results, #qa-results, #bulk-results { margin-top: 10px; }
 
@@ -275,13 +284,13 @@
   .field-cell {
     background: var(--vn-white);
     border: 1px solid var(--vn-line);
-    border-radius: 8px;
+    border-radius: 4px;
     padding: 12px 14px;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .field-cell.wide  { grid-column: 1 / -1; }
   .field-cell.dbl   { grid-column: span 2; }
-  .field-cell:focus-within { border-color: var(--vn-pink); box-shadow: 0 0 0 2px rgba(255,0,92,0.08); }
+  .field-cell:focus-within { border-color: var(--vn-pink); box-shadow: 0 0 0 2px rgba(180,83,9,0.08); }
   .field-cell .field-header {
     display: flex;
     align-items: center;
@@ -295,15 +304,15 @@
     min-width: 22px;
     height: 22px;
     padding: 0 6px;
-    border-radius: 11px;
+    border-radius: 4px;
     background: var(--vn-black);
     color: var(--vn-yellow);
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 600;
     letter-spacing: 0;
   }
   .field-cell .field-label {
-    font-weight: 700;
+    font-weight: 600;
     font-size: 12px;
     color: var(--vn-ink);
     text-transform: uppercase;
@@ -345,7 +354,7 @@
   .bulk-change-row .remove-btn:hover { background: var(--vn-fail-bg); }
   .bulk-inline-label {
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     color: var(--vn-muted);
@@ -375,9 +384,9 @@
   }
   .inherit-row input[type="checkbox"] { accent-color: var(--vn-orange); margin: 0; }
   .inherit-row label { margin: 0; font-weight: 500; font-size: 12px; text-transform: none; letter-spacing: 0; color: var(--vn-warn-fg); }
-  .inherit-row label strong { color: var(--vn-ink); font-weight: 700; }
+  .inherit-row label strong { color: var(--vn-ink); font-weight: 600; }
   .inherit-row .preview { color: var(--vn-muted); font-style: italic; }
-  .field-cell.inherited { background: #FFFEF5; border-color: var(--vn-yellow); }
+  .field-cell.inherited { background: #FCF6F0; border-color: var(--vn-yellow); }
   .field-cell.inherited input:disabled, .field-cell.inherited textarea:disabled, .field-cell.inherited select:disabled { opacity: 0.75; background: var(--vn-panel); }
 
   /* Pair checkbox — sits below the textarea / dropdown to opt this field
@@ -398,10 +407,10 @@
   }
   .pair-toggle input[type="checkbox"] { margin: 0; cursor: pointer; }
   .pair-toggle.active {
-    background: rgba(255, 0, 92, 0.06);
+    background: rgba(180,83,9,0.06);
     border-color: var(--vn-pink);
     color: var(--vn-pink);
-    font-weight: 700;
+    font-weight: 600;
   }
   .pair-toggle .pair-toggle-label { letter-spacing: 0.2px; }
   .pair-toggle .pair-toggle-hint { color: var(--vn-muted); font-weight: 400; font-style: italic; margin-left: 4px; }
@@ -431,29 +440,29 @@
     padding: 6px 12px;
     margin-top: 6px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     cursor: pointer;
     font-family: inherit;
   }
-  .add-date-btn:hover { background: rgba(255,0,92,0.06); border-color: var(--vn-pink); }
+  .add-date-btn:hover { background: rgba(180,83,9,0.06); border-color: var(--vn-pink); }
 
   /* ---------- UTM Builder: implementation-instructions callout ---------- */
   .utm-instr-box {
     margin-top: 12px;
     margin-bottom: 4px;
     padding: 14px 16px;
-    background: #FFF7D6;          /* warm yellow */
+    background: #FBF1E8;          /* faint copper tint */
     border: 2px solid var(--vn-yellow);
-    border-radius: 8px;
+    border-radius: 4px;
     color: var(--vn-black);
     font-size: 13px;
     line-height: 1.5;
     box-shadow: 0 2px 6px rgba(0,0,0,0.04);
   }
   .utm-instr-box .utm-instr-title {
-    font-weight: 800;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-size: 12px;
@@ -473,7 +482,7 @@
     background: rgba(0,0,0,0.06);
     padding: 1px 6px;
     border-radius: 3px;
-    font-family: "SF Mono", Consolas, monospace;
+    font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
     font-size: 12px;
   }
   .utm-instr-box .utm-instr-screenshot {
@@ -481,7 +490,7 @@
     padding: 8px;
     background: var(--vn-white);
     border: 1px solid var(--vn-line);
-    border-radius: 6px;
+    border-radius: 4px;
     text-align: center;
   }
   .utm-instr-box .utm-instr-screenshot img {
@@ -509,7 +518,7 @@
   .utm-multi-platform-note {
     margin-top: 12px;
     padding: 10px 14px;
-    background: #FFEFD9;
+    background: #FBF1E8;
     border-left: 4px solid var(--vn-orange);
     border-radius: 4px;
     color: var(--vn-black);
@@ -525,12 +534,12 @@
     align-items: center;
     padding: 6px 8px;
     border: 1px solid var(--vn-line);
-    border-radius: 6px;
+    border-radius: 4px;
     margin-bottom: 6px;
     background: var(--vn-white);
   }
   .url-list-row .url-row-num {
-    font-weight: 700;
+    font-weight: 600;
     color: var(--vn-muted);
     text-align: center;
     font-size: 12px;
@@ -541,7 +550,7 @@
     border: 1px solid var(--vn-line);
     border-radius: 4px;
     font-size: 12px;
-    font-family: "SF Mono", Consolas, monospace;
+    font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
   }
   .url-list-row select {
     width: 100%;
@@ -561,14 +570,14 @@
   .url-list-row .url-row-remove:hover { color: var(--vn-pink); }
 
   /* ---------- UTM Builder output table ---------- */
-  .utm-table-wrap { overflow-x: auto; margin-top: 12px; border: 1px solid var(--vn-line); border-radius: 6px; background: var(--vn-white); }
+  .utm-table-wrap { overflow-x: auto; margin-top: 12px; border: 1px solid var(--vn-line); border-radius: 4px; background: var(--vn-white); }
   .utm-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .utm-table thead th {
     background: var(--vn-black);
     color: var(--vn-yellow);
     text-align: left;
     padding: 8px 10px;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.4px;
     font-size: 11px;
@@ -579,14 +588,14 @@
     padding: 8px 10px;
     border-top: 1px solid var(--vn-line);
     vertical-align: middle;
-    font-family: "SF Mono", Consolas, monospace;
+    font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
     font-size: 11px;
     white-space: nowrap;          /* no wrapping — table scrolls horizontally instead */
     line-height: 1.4;
   }
   .utm-table th { white-space: nowrap; }
   .utm-table tr:hover td { background: var(--vn-soft); }
-  .utm-table td.status-cell { font-family: inherit; font-weight: 700; white-space: nowrap; text-align: center; }
+  .utm-table td.status-cell { font-family: inherit; font-weight: 600; white-space: nowrap; text-align: center; }
   .utm-table td.status-cell.live { background: var(--vn-pass-bg); color: var(--vn-pass-fg); }
   .utm-table td.status-cell.dead { background: var(--vn-fail-bg); color: var(--vn-fail-fg); }
   .utm-table td.status-cell.err  { background: var(--vn-fail-bg); color: var(--vn-fail-fg); }
@@ -600,7 +609,7 @@
   .utm-table td.qa-bad-cell {
     background: var(--vn-fail-bg);
     color: var(--vn-fail-fg);
-    font-weight: 700;
+    font-weight: 600;
   }
   /* Per-field columns in the Taxonomy QA table get a minimum width so the
      content stays readable even when many columns are scrolled into view. */
@@ -621,7 +630,7 @@
     width: 100%;
     padding: 9px 32px 9px 11px;
     border: 1px solid var(--vn-line);
-    border-radius: 6px;
+    border-radius: 4px;
     background: var(--vn-white);
     cursor: pointer;
     display: flex;
@@ -633,7 +642,7 @@
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .ms-button:hover { border-color: var(--vn-ink); }
-  .ms-wrap.open .ms-button { border-color: var(--vn-pink); box-shadow: 0 0 0 2px rgba(255,0,92,0.12); }
+  .ms-wrap.open .ms-button { border-color: var(--vn-pink); box-shadow: 0 0 0 2px rgba(180,83,9,0.12); }
   .ms-button .ms-summary { flex: 1; color: var(--vn-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ms-button .ms-summary.has-values { color: var(--vn-ink); font-weight: 600; }
   .ms-button .ms-arrow {
@@ -651,7 +660,7 @@
     right: 0;
     background: var(--vn-white);
     border: 1px solid var(--vn-line);
-    border-radius: 6px;
+    border-radius: 4px;
     z-index: 100;
     box-shadow: 0 6px 20px rgba(0,0,0,0.14);
     max-height: 320px;
@@ -681,7 +690,7 @@
   .ms-actions a {
     color: var(--vn-pink);
     cursor: pointer;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
   }
@@ -708,11 +717,11 @@
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    border-radius: 10px;
+    border-radius: 4px;
     background: var(--vn-pink);
     color: var(--vn-white);
     font-size: 10px;
-    font-weight: 800;
+    font-weight: 600;
     letter-spacing: 0;
     flex-shrink: 0;
     margin-right: 2px;
@@ -739,13 +748,13 @@
     border-radius: 4px;
     padding: 6px 18px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.4px;
     text-transform: uppercase;
     cursor: pointer;
     font-family: inherit;
   }
-  .ms-done:hover { background: #e6004f; }
+  .ms-done:hover { background: #7C2D12; }
 
   /* disabled state for inheritance-locked fields */
   .ms-wrap.disabled .ms-button { background: var(--vn-panel); cursor: not-allowed; opacity: 0.75; pointer-events: none; }
@@ -756,7 +765,22 @@
 
 <header>
   <div class="brand-lockup">
-    <span class="vn-dot"></span>
+    <svg class="vn-wordmark" viewBox="78 7 287.47 53" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Viral Nation">
+      <path d="M108.2,22h-7.3c-0.3,0-0.6,0.2-0.7,0.5l-6.4,23.1L87,22.5c-0.1-0.3-0.4-0.5-0.7-0.5H79c-0.5,0-0.8,0.5-0.7,0.9l10.8,30.9c0.1,0.3,0.4,0.5,0.7,0.5h7.8c0.3,0,0.6-0.2,0.7-0.5l10.6-30.9C109,22.4,108.7,22,108.2,22z" fill="#FAFAFA"/>
+      <path d="M132.4,28.3v-5.6c0-0.4-0.3-0.7-0.7-0.7h-7c-0.4,0-0.7,0.3-0.7,0.7v30.9c0,0.4,0.3,0.7,0.7,0.7h7c0.4,0,0.7-0.3,0.7-0.7V37.9c0-4.9,4.3-8.7,9.1-8.1c0,0,0.1,0,0.1,0c0.4,0.1,0.8-0.3,0.8-0.7v-7.7c-0.5-0.1-0.7-0.1-1-0.1C137.6,21.4,134.3,23.9,132.4,28.3z" fill="#FAFAFA"/>
+      <path d="M182.3,12.4l-7,1.6c-0.3,0.1-0.5,0.4-0.5,0.7v38.8c0,0.4,0.3,0.7,0.7,0.7h7c0.4,0,0.7-0.3,0.7-0.7V13.1C183.2,12.6,182.9,12.3,182.3,12.4z" fill="#FAFAFA"/>
+      <path d="M214.9,21.4c-4.4,0-7.3,1.6-9.7,5.2v-4c0-0.4-0.3-0.7-0.7-0.7h-7c-0.4,0-0.7,0.3-0.7,0.7v30.9c0,0.4,0.3,0.7,0.7,0.7h7c0.4,0,0.7-0.3,0.7-0.7V34.9c0-3.8,2.6-6.3,6.8-6.3c3.6,0,5.4,2,5.4,5.8v19.2c0,0.4,0.3,0.7,0.7,0.7h7c0.4,0,0.7-0.3,0.7-0.7v-21C225.8,25.4,221.9,21.4,214.9,21.4z" fill="#FAFAFA"/>
+      <path d="M256.5,31.3c0-6.6-4.5-9.9-13.2-9.9c-8.4,0-13,3.4-13.8,10.4c0,0.4,0.3,0.8,0.7,0.8h6.7c0.4,0,0.6-0.3,0.7-0.6c0.5-2.9,2-3.8,5.8-3.8c3.2,0,4.8,1.1,4.8,3.2c0,1.1-0.5,2-1.4,2.5c-1.1,0.6-1.1,0.6-5.3,1.3l-3.4,0.6c-6.4,1.1-9.5,4.4-9.5,10.2c0,5.8,3.9,9.7,9.8,9.7c3.2,0,6.1-1.2,8.7-3.6c0.4-0.4,1.1-0.1,1.2,0.4c0.1,0.6,0.3,1,0.7,1.5c0.1,0.2,0.3,0.3,0.6,0.3h8.7v-1c-1.4-1.4-1.9-2.3-1.9-3.9V31.3z M248.3,41.3c0,4.8-2.4,7.6-6.6,7.6c-2.8,0-4.5-1.5-4.5-3.9c0-2.5,1.3-3.7,4.8-4.4l2.9-0.5c1.4-0.3,2-0.4,2.6-0.6c0.5-0.2,1,0.2,1,0.7V41.3z" fill="#FAFAFA"/>
+      <path d="M284.8,22h-7c-0.4,0-0.7,0.3-0.7,0.7v30.9c0,0.4,0.3,0.7,0.7,0.7h7c0.4,0,0.7-0.3,0.7-0.7V22.7C285.6,22.3,285.2,22,284.8,22z" fill="#FAFAFA"/>
+      <path d="M305,21.4c-9.9,0-15.9,6.5-15.9,17.1c0,10.7,6,17.1,16,17.1c9.9,0,16-6.5,16-16.9C321,27.8,315.1,21.4,305,21.4z M305.1,48.9c-4.5,0-7.6-4.1-7.6-10.4c0-6.2,3.1-10.4,7.6-10.4c4.6,0,7.6,4.1,7.6,10.5C312.7,44.7,309.6,48.9,305.1,48.9z" fill="#FAFAFA"/>
+      <path d="M342.6,21.4c-4.4,0-7.3,1.6-9.7,5.2v-4c0-0.4-0.3-0.7-0.7-0.7h-7c-0.4,0-0.7,0.3-0.7,0.7v30.9c0,0.4,0.3,0.7,0.7,0.7h7c0.4,0,0.7-0.3,0.7-0.7V34.9c0-3.8,2.6-6.3,6.8-6.3c3.6,0,5.4,2,5.4,5.8v19.2c0,0.4,0.3,0.7,0.7,0.7h7c0.4,0,0.7-0.3,0.7-0.7v-21C353.5,25.4,349.6,21.4,342.6,21.4z" fill="#FAFAFA"/>
+      <path d="M157.8,21.4c-8.4,0-13,3.4-13.8,10.4c0,0.4,0.3,0.8,0.7,0.8h6.7c0.4,0,0.6-0.3,0.7-0.6c0.5-2.9,2-3.8,5.8-3.8c3.2,0,4.8,1.1,4.8,3.2c0,1.1-0.5,2-1.4,2.5c-1.1,0.6-1.1,0.6-5.3,1.3l-3.4,0.6c-6.4,1.1-9.5,4.4-9.5,10.2c0,5.8,3.9,9.7,9.8,9.7c3.2,0,6.1-1.2,8.7-3.6c0.4-0.4,1.1-0.1,1.2,0.4c0.1,0.6,0.3,1,0.7,1.5c0.1,0.2,0.3,0.3,0.6,0.3h6.1c0.4,0,0.7-0.3,0.7-0.7V31.4C171.1,24.8,166.6,21.4,157.8,21.4z M162.9,41.3c0,4.8-2.4,7.6-6.6,7.6c-2.8,0-4.5-1.5-4.5-3.9c0-2.5,1.3-3.7,4.8-4.4l2.9-0.5c1.4-0.3,2-0.4,2.6-0.6c0.5-0.2,1,0.2,1,0.7V41.3z" fill="#FAFAFA"/>
+      <path d="M272.2,27.6c0.4,0,0.5-0.3,0.7-0.7l1.7-4.1c0.1-0.5-0.1-0.7-0.7-0.7h-4.8v-9c0-0.5-0.4-0.8-1-0.7l-7,1.6c-0.3,0.1-0.4,0.4-0.4,0.7v12.2c0,0.4,0.3,0.7,0.7,0.7h5.7l-6,3.6c-0.3,0.2-0.5,0.5-0.5,0.9v15c0,5.1,2.7,7.6,8.2,7.6c1.7,0,3-0.1,4.3-0.5c0.3-0.1,0.5-0.4,0.5-0.7v-4.5c0-0.4-0.4-0.8-0.8-0.7c-0.4,0-0.7,0.1-1.1,0.1c-2.2,0-2.8-0.7-2.8-3.5V27.6H272.2z" fill="#FAFAFA"/>
+      <path d="M119.2,22h-7c-0.4,0-0.7,0.3-0.7,0.7v30.9c0,0.4,0.3,0.7,0.7,0.7h7c0.4,0,0.7-0.3,0.7-0.7V22.7C120,22.3,119.6,22,119.2,22z" fill="#FAFAFA"/>
+      <path d="M119.4,11h-7c-0.4,0-0.7,0.3-0.7,0.7v6.1c0,0.4,0.3,0.7,0.7,0.7h7c0.4,0,0.7-0.3,0.7-0.7v-6.1C120.1,11.3,119.8,11,119.4,11z" fill="#FAFAFA"/>
+      <path d="M285,11h-7c-0.4,0-0.7,0.3-0.7,0.7v6.1c0,0.4,0.3,0.7,0.7,0.7h7c0.4,0,0.7-0.3,0.7-0.7v-6.1C285.7,11.3,285.4,11,285,11z" fill="#FAFAFA"/>
+    </svg>
+    <span class="brand-divider" aria-hidden="true"></span>
     <h1>Taxonomy <span class="accent">Tools</span></h1>
   </div>
   <div class="meta">
@@ -1083,7 +1107,7 @@ function renderGeneratorFields() {
       '<div class="field-header"><span class="field-num" style="background:var(--vn-pink); color:var(--vn-white);">★</span>' +
       '<span class="field-label">Brand <span class="field-note">(filters Product SKU and resolves URL → Owned domain — not in output)</span></span></div>' +
       '<select id="gen_p3_brand" onchange="onP3BrandChange()">' + brandOpts + '</select>' +
-      (!PRODUCTS ? '<div class="hint" style="margin-top:4px; color:#8a6d00;">No Products sheet found on the data spreadsheet. Ask an admin to create a "Taxonomy Products" tab.</div>' : '');
+      (!PRODUCTS ? '<div class="hint" style="margin-top:4px; color:#7C2D12;">No Products sheet found on the data spreadsheet. Ask an admin to create a "Taxonomy Products" tab.</div>' : '');
     container.appendChild(brandBanner);
   }
 
@@ -1731,12 +1755,24 @@ function onLpDomainUrlInput(prefix) {
   //      against the per-SKU "Retailer URLs" mapping in the Products sheet.
   if (resolved === 'Owned') {
     const skuInfo = extractAndMatchSkuFromUrl(raw, brand);
-    if (skuInfo.candidate) {
-      if (skuInfo.matched) {
-        html += '<br><span class="pass">Detected SKU:</span> <strong>' + escapeHtml(skuInfo.matched) + '</strong>' +
-                (skuInfo.productName ? ' <span class="hint">(' + escapeHtml(skuInfo.productName) + ')</span>' : '') +
-                ' — <a href="#" onclick="applyUrlSku(\'' + prefix + '\', \'' + escapeAttr(skuInfo.matched) + '\'); return false;">use this SKU</a>';
-      } else {
+    if (skuInfo.matched) {
+      html += '<br><span class="pass">Detected SKU:</span> <strong>' + escapeHtml(skuInfo.matched) + '</strong>' +
+              (skuInfo.productName ? ' <span class="hint">(' + escapeHtml(skuInfo.productName) + ')</span>' : '') +
+              ' — <a href="#" onclick="applyUrlSku(\'' + prefix + '\', \'' + escapeAttr(skuInfo.matched) + '\'); return false;">use this SKU</a>';
+    } else {
+      // Path-tail token extraction failed. Brand-owned INTERNATIONAL storefronts
+      // (e.g. tienda.cuisinart.com.mx) use localized slugs like
+      // "cafetera-grind-brew-cuisinart" that don't contain the US SKU (DGB-30),
+      // so path-tail matching can't resolve them. Fall back to the explicit
+      // per-SKU "Retailer URLs" mapping the user maintains in the Products
+      // sheet — an Owned domain is exactly where a hand-entered URL mapping
+      // is the intended source of truth.
+      const byUrl = matchSkuByRetailerUrl(raw, brand);
+      if (byUrl) {
+        html += '<br><span class="pass">Detected SKU:</span> <strong>' + escapeHtml(byUrl.sku) + '</strong>' +
+                (byUrl.name ? ' <span class="hint">(' + escapeHtml(byUrl.name) + ')</span>' : '') +
+                ' — <a href="#" onclick="applyUrlSku(\'' + prefix + '\', \'' + escapeAttr(byUrl.sku) + '\'); return false;">use this SKU</a>';
+      } else if (skuInfo.candidate) {
         html += '<br><span class="fail">Extracted "' + escapeHtml(skuInfo.candidate) + '" from the URL, but it\'s not in the Products sheet for brand "' + escapeHtml(brand || '(none selected)') + '".</span>';
       }
     }
@@ -3011,7 +3047,7 @@ function renderUrlPlatformFields_() {
         '</div>' +
         '<div class="field-cell wide">' +
           '<div class="field-header"><span class="field-num">2</span><span class="field-label">Destination URLs <span class="field-note">(paste one per line, http:// or https://, no query string)</span></span></div>' +
-          '<textarea id="url_bulk_input" style="min-height:110px; font-family: \'SF Mono\', Consolas, monospace; font-size:12px;" placeholder="https://www.cuisinart.com/chefs-classic-stainless-skillet-fp22-24/CSS-22.html&#10;https://www.cuisinart.com/chefs-classic-3-quart-saucepan/74-193P1.html&#10;https://www.babylisspro.com/curling-irons/babnt125tuc.html"></textarea>' +
+          '<textarea id="url_bulk_input" style="min-height:110px; font-family: \'JetBrains Mono\', \'SF Mono\', Consolas, monospace; font-size:12px;" placeholder="https://www.cuisinart.com/chefs-classic-stainless-skillet-fp22-24/CSS-22.html&#10;https://www.cuisinart.com/chefs-classic-3-quart-saucepan/74-193P1.html&#10;https://www.babylisspro.com/curling-irons/babnt125tuc.html"></textarea>' +
           '<div style="margin-top:8px;">' +
             '<button type="button" class="btn secondary" onclick="loadBulkUrlsFromTextarea()">Load URLs into editable list</button>' +
             '<span class="hint" style="margin-left:8px;">— or skip the textarea and add rows manually below.</span>' +
