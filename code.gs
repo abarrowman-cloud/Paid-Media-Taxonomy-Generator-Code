@@ -92,6 +92,8 @@ const FUNNEL_MAP = {
   'Traffic':                 'Middle Funnel',
   'Engagement':              'Middle Funnel',
   'Lead Generation':         'Lower Funnel',
+  'App Promotion':           'Lower Funnel',
+  'Website Conversions':     'Lower Funnel',
   'Sales':                   'Lower Funnel'
 };
 
