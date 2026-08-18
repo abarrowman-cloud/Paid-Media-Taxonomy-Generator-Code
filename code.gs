@@ -88,6 +88,7 @@ const FUNNEL_MAP = {
   'Awareness (Video Views)': 'Upper Funnel',
   'Video Views':             'Upper Funnel',
   'Consideration':           'Middle Funnel',
+  'Consideration (TTMS)':    'Middle Funnel',
   'Traffic':                 'Middle Funnel',
   'Engagement':              'Middle Funnel',
   'Lead Generation':         'Lower Funnel',
