@@ -107,8 +107,18 @@ spend behind it, so it always has a parent post. The rule is declared once, on t
 field's `requiredWhen` in `code.gs`, and read from there by the form, the validator
 and the build path.
 
-**Empty means "not recorded", never "no organic post"** — every ad named before
-this field existed has a NULL `ext_p3_organic_post_id`.
+**The post-ID position is always written.** Creative with no organic parent gets
+the `NA` sentinel the taxonomy already uses for the handle and the custom
+identifier, so slot 11 has one shape rather than two:
+
+```
+… | gisellelangley ~ DdbhlHZOdfw | NA     ← has an organic parent
+… | gisellelangley ~ NA          | NA     ← confirmed none
+… | gisellelangley               | NA     ← named before this field existed
+```
+
+`PAID_MEDIA_UNIFIED` collapses both `NA` and the legacy empty case to NULL, so
+`ext_p3_organic_post_id IS NULL` covers "nothing to join to" either way.
 
 ## Deploying
 

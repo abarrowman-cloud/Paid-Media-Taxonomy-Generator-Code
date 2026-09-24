@@ -144,7 +144,7 @@ const base = {
 // 1. Segment count must stay 13 with and without a post ID.
 const noPost = buildOutput('P3', base);
 eq('no post: 13 segments', noPost.replace(/^R#:/,'').split(' | ').length, 13);
-eq('no post: influencer slot is handle alone', noPost.replace(/^R#:/,'').split(' | ')[11], 'gisellelangley');
+eq('no post: slot 11 always carries the NA sentinel', noPost.replace(/^R#:/,'').split(' | ')[11], 'gisellelangley ~ NA');
 
 const withPost = buildOutput('P3', Object.assign({}, base, {organicPostUrl:'https://www.instagram.com/p/DdbhlHZOdfw/'}));
 eq('with post: 13 segments', withPost.replace(/^R#:/,'').split(' | ').length, 13);
@@ -160,10 +160,22 @@ const p2 = parseName('P3', noPost);
 eq('legacy name parses', p2.ok, true);
 eq('legacy handle', p2.values.influencer, 'gisellelangley');
 eq('legacy postId empty', p2.values.organicPostUrl, '');
+eq('Darkposted with no URL still writes the position', buildOutput('P3', base).replace(/^R#:/,'').split(' | ')[11], 'gisellelangley ~ NA');
 
-// 3. Historical name with no post ID is byte-identical after the change.
-eq('historical byte-identical', noPost,
-  'R#:1 | Summer Blowout | Darkposted | Influencer Video | 9x16 | 30 | BC: Smooth in one pass | CTA: Shop Now | LP: Amazon ~ Hair Dryers (DGB-30) | 05/01/26 | 06/30/26 | gisellelangley | NA');
+// 3. The DT parses by position, so what must stay stable is the SEGMENT COUNT
+//    and the meaning of every slot — not the bytes of slot 11, which now always
+//    carries the post-ID position. A name written before this field existed must
+//    still parse correctly, with no post ID invented for it.
+const legacy = 'R#:1 | Summer Blowout | Darkposted | Influencer Video | 9x16 | 30 | BC: Smooth in one pass | CTA: Shop Now | LP: Amazon ~ Hair Dryers (DGB-30) | 05/01/26 | 06/30/26 | gisellelangley | NA';
+eq('legacy name still 13 segments', legacy.replace(/^R#:/,'').split(' | ').length, 13);
+const lp = parseName('P3', legacy);
+eq('legacy parses cleanly', lp.ok, true);
+eq('legacy handle intact', lp.values.influencer, 'gisellelangley');
+eq('legacy invents no post id', lp.values.organicPostUrl, '');
+eq('legacy customId still slot 12', lp.values.customId, 'NA');
+// The NA sentinel must read back as "no post", never as a post whose id is "NA".
+eq('NA sentinel round-trips to empty', parseName('P3', noPost).values.organicPostUrl, '');
+eq('NA sentinel keeps the handle', parseName('P3', noPost).values.influencer, 'gisellelangley');
 
 // 4. Boosted requires the post URL.
 throws('Boosted without post URL throws', () => buildOutput('P3', Object.assign({}, base, {assetType:'Boosted'})), 'required when Asset Type is "Boosted"');

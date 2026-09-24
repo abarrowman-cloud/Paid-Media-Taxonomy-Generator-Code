@@ -275,10 +275,13 @@ function buildOutput(level, v) {
     if (f(v.organicPostUrl) && !organicRef.postId) {
       throw new Error('Organic Post URL "' + f(v.organicPostUrl) + '" did not yield a usable post ID (' + organicRef.status + '): ' + organicRef.reason);
     }
-    // No organic parent (dark-posted brand creative) emits the handle alone —
-    // the same shape every historical name already has. NULL is the honest
-    // value downstream, so no "~ NA" filler is written.
-    const influencer = organicRef.postId ? (handle + ' ~ ' + organicRef.postId) : handle;
+    // The post-ID position is ALWAYS written, so slot 11 has one shape rather
+    // than two. Creative with no organic parent (dark-posted brand work) gets
+    // the explicit 'NA' sentinel the taxonomy already uses for the handle and
+    // the custom identifier — an absent value and an unwritten one are then
+    // indistinguishable to a reader, which is the point.
+    // Boosted can never reach the 'NA' branch: it is required above.
+    const influencer = handle + ' ~ ' + (organicRef.postId || 'NA');
     const productCat = f(v.productCat);
     const productSku = f(v.productSku);
     const landingPage = f(v.landingPage);
@@ -716,7 +719,9 @@ function parseName(level, name) {
       const infM = infSeg.match(/^(.*?)\s*~\s*(.+)$/);
       if (infM) {
         values.influencer     = infM[1].trim();
-        values.organicPostUrl = infM[2].trim();
+        // 'NA' is the sentinel for "no organic parent", not a post ID — round
+        // -tripping it into the form would make the field look populated.
+        values.organicPostUrl = /^NA$/i.test(infM[2].trim()) ? '' : infM[2].trim();
       } else {
         values.influencer     = infSeg;
         values.organicPostUrl = '';
