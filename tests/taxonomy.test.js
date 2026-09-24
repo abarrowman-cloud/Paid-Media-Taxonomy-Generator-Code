@@ -194,5 +194,38 @@ const vIssues = validateValues('P3', Object.assign({}, base, {assetType:'Boosted
 eq('validator flags missing post URL on Boosted', vIssues.filter(i=>i.field==='organicPostUrl').length, 1);
 eq('validator quiet when supplied', validateValues('P3', Object.assign({}, base, {assetType:'Boosted', organicPostUrl:'https://www.instagram.com/p/DdbhlHZOdfw/'})).filter(i=>i.field==='organicPostUrl').length, 0);
 
+// =====================================================================
+// C. Apps Script runtime compatibility
+//
+// code.gs runs on Apps Script's V8, NOT on Node. Node accepts syntax that
+// Apps Script rejects at PARSE time, which fails the whole file on save
+// rather than at runtime — so `node --check` passing proves nothing here.
+// BigInt is the one that bit us: a `32n` literal saved fine in every local
+// check and blew up in the editor with "Unexpected token ILLEGAL".
+// =====================================================================
+const src = fs.readFileSync(path.join(__dirname, '..', 'code.gs'), 'utf8');
+// Strip comments and strings so matches in prose don't raise false alarms.
+const code = src
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/\/\/[^\n]*/g, '')
+  .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
+  .replace(/"(?:[^"\\\n]|\\.)*"/g, '""');
+
+const UNSUPPORTED = [
+  [/\b\d+n\b/,            'BigInt literal (e.g. 32n)'],
+  [/\bBigInt\s*\(/,       'BigInt() constructor'],
+  [/\?\./,                 'optional chaining (?.)'],
+  [/\?\?/,                 'nullish coalescing (??)'],
+  [/\breplaceAll\s*\(/,   'String.prototype.replaceAll'],
+  [/\bObject\.fromEntries\b/, 'Object.fromEntries'],
+  [/\.flatMap\s*\(/,      'Array.prototype.flatMap'],
+  [/\.at\s*\(\s*-/,        'Array.prototype.at with a negative index']
+];
+UNSUPPORTED.forEach(function (pair) {
+  const hit = code.match(pair[0]);
+  if (hit) { fail++; console.log('FAIL Apps Script compatibility: found ' + pair[1] + ' -> ' + JSON.stringify(hit[0])); }
+  else { pass++; }
+});
+
 console.log('\npass=' + pass + '  fail=' + fail);
 process.exit(fail === 0 ? 0 : 1);
