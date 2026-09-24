@@ -275,10 +275,13 @@ function buildOutput(level, v) {
     if (f(v.organicPostUrl) && !organicRef.postId) {
       throw new Error('Organic Post URL "' + f(v.organicPostUrl) + '" did not yield a usable post ID (' + organicRef.status + '): ' + organicRef.reason);
     }
-    // No organic parent (dark-posted brand creative) emits the handle alone —
-    // the same shape every historical name already has. NULL is the honest
-    // value downstream, so no "~ NA" filler is written.
-    const influencer = organicRef.postId ? (handle + ' ~ ' + organicRef.postId) : handle;
+    // The post-ID position is ALWAYS written, so slot 11 has one shape rather
+    // than two. Creative with no organic parent (dark-posted brand work) gets
+    // the explicit 'NA' sentinel the taxonomy already uses for the handle and
+    // the custom identifier — an absent value and an unwritten one are then
+    // indistinguishable to a reader, which is the point.
+    // Boosted can never reach the 'NA' branch: it is required above.
+    const influencer = handle + ' ~ ' + (organicRef.postId || 'NA');
     const productCat = f(v.productCat);
     const productSku = f(v.productSku);
     const landingPage = f(v.landingPage);
@@ -716,7 +719,9 @@ function parseName(level, name) {
       const infM = infSeg.match(/^(.*?)\s*~\s*(.+)$/);
       if (infM) {
         values.influencer     = infM[1].trim();
-        values.organicPostUrl = infM[2].trim();
+        // 'NA' is the sentinel for "no organic parent", not a post ID — round
+        // -tripping it into the form would make the field look populated.
+        values.organicPostUrl = /^NA$/i.test(infM[2].trim()) ? '' : infM[2].trim();
       } else {
         values.influencer     = infSeg;
         values.organicPostUrl = '';
@@ -2938,9 +2943,16 @@ function organicNormalize_(raw) {
     const v = i === -1 ? '' : kv.slice(i + 1);
     try { params[k] = decodeURIComponent(v.replace(/\+/g, ' ')); } catch (e) { params[k] = v; }
   });
+  // LinkedIn URNs arrive percent-encoded when copied or embedded
+  // ("urn%3Ali%3AugcPost%3A749..."). Decoded exactly once, per the spec:
+  // re-decoding an untrusted string is how a double-encoded payload slips
+  // through. The raw path is kept for everything else.
+  let pathDecoded = path;
+  try { pathDecoded = decodeURIComponent(path); } catch (e) { /* malformed escapes — keep raw */ }
   return {
     host: host,
     path: path,
+    pathDecoded: pathDecoded,
     params: params,
     segs: path.split('/').filter(function(x) { return x !== ''; }),
     fragment: (m[5] || '').replace(/^#/, '')
@@ -3221,15 +3233,49 @@ function organicMatchFacebook_(u) {
   return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'facebook', reason: 'Unrecognised Facebook URL' });
 }
 
+/** Canonical casing for the three LinkedIn URN namespaces. */
+function organicLinkedInType_(raw) {
+  const t = String(raw || '').toLowerCase();
+  return t === 'activity' ? 'activity' : t === 'ugcpost' ? 'ugcPost' : t === 'share' ? 'share' : null;
+}
+
+/**
+ * LinkedIn keeps THREE post namespaces — activity, ugcPost and share — and an
+ * activity ID and its content ID are different numbers for the same post. The
+ * spec is explicit: do not merge the namespaces by number. So the key emitted
+ * here is the typed form "{type}:{id}", never the bare digits, which would
+ * silently collapse two different posts that happen to share a number.
+ */
 function organicMatchLinkedIn_(u) {
   const s = u.segs;
-  if (u.host === 'lnkd.in') return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'linkedin', reason: 'lnkd.in link must be resolved' });
-  const urn = u.path.match(/urn:li:(activity|ugcPost|share):(\d+)/i);
-  if (urn) return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'linkedin', postId: urn[2], surfaceType: 'post' });
-  // "/posts/{slug}-{numeric}-{hash}" — the activity ID is the long numeric run.
+  const dec = u.pathDecoded || u.path;
+  if (u.host === 'lnkd.in') return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'linkedin', reason: 'lnkd.in short link must be resolved — it carries no post identity' });
+
+  // Not posts. Checked first so none can fall through to the URN match below.
+  if (s[0] === 'sharing' || s[0] === 'shareArticle') return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'linkedin', reason: 'Share-action URL — a tool for creating a post, not an existing one' });
+  if (s[0] === 'in')      return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'linkedin', handle: s[1] || null, reason: 'Member profile, not a post' });
+  if (s[0] === 'company') return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'linkedin', handle: s[1] || null, reason: 'Company page, not a post' });
+  if (s[0] === 'pulse')   return organicResult_({ status: ORGANIC_STATUS.NO_DURABLE_ID, platform: 'linkedin', surfaceType: 'article', reason: 'Pulse article — a separate surface, and the URL carries no typed numeric ID to join on' });
+  if (s[0] === 'newsletters') return organicResult_({ status: ORGANIC_STATUS.WRONG_NAMESPACE, platform: 'linkedin', reason: 'Newsletter landing page — a different ID namespace from a post' });
+
+  // Typed URN anywhere in the path: /feed/update/, /video/live/, /video/event/.
+  const urn = dec.match(/urn:li:(activity|ugcPost|share):(\d+)/i);
+  if (urn) {
+    const type = organicLinkedInType_(urn[1]);
+    const surface = (s[0] === 'video' && s[1] === 'live') ? 'live'
+                  : (s[0] === 'video') ? 'video' : 'post';
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'linkedin', postId: type + ':' + urn[2], surfaceType: surface });
+  }
+
+  // Readable permalink: /posts/{slug}-{type}-{id}-{shareCode}. Anchor on the
+  // "-{type}-" marker, never on "the long numeric run" — a descriptive slug can
+  // contain digits, and the trailing share code is not identity.
   if (s[0] === 'posts' && s.length >= 2) {
-    const m = s[1].match(/(\d{15,25})/);
-    if (m) return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'linkedin', postId: m[1], surfaceType: 'post' });
+    const m = decodeURIComponent(s[1]).match(/-(activity|ugcPost)-(\d+)/i);
+    if (m) {
+      return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'linkedin', postId: organicLinkedInType_(m[1]) + ':' + m[2], surfaceType: 'post' });
+    }
+    return organicResult_({ status: ORGANIC_STATUS.MALFORMED, platform: 'linkedin', reason: 'LinkedIn /posts/ URL carries no typed activity or ugcPost ID' });
   }
   return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'linkedin', reason: 'Unrecognised LinkedIn URL' });
 }
@@ -3257,16 +3303,35 @@ function organicRouteHost_(host) {
   return null;
 }
 
-/** Unwrap the URL-in-URL wrappers listed in the shared normalization contract.
- *  Depth-capped so a hand-crafted loop cannot hang the script. */
+/**
+ * Unwrap the URL-in-URL wrappers listed in the shared normalization contract.
+ *
+ * Scoped BY HOST on purpose. A blanket "unwrap any ?url= parameter" looks
+ * equivalent and is not: LinkedIn's /sharing/share-offsite/?url= is a
+ * compose-a-post action, so following it returns the article being shared
+ * instead of correctly rejecting the URL as "not a post". Only the families
+ * the contract actually names are unwrapped.
+ *
+ * Depth-capped so a hand-crafted loop cannot hang the script.
+ */
 function organicUnwrap_(u, depth) {
   if (!u || depth >= ORGANIC_REDIRECT_CAP) return u;
-  const WRAPPERS = ['href', 'u', 'url', 'unsafe_link', 'continue'];
+  const WRAPPERS = [
+    { host: /(^|\.)facebook\.com$/,            params: ['href', 'u'] },
+    { host: /(^|\.)youtube\.com$/,             params: ['url', 'u'] },
+    { host: /^consent\.youtube\.com$/,         params: ['continue'] },
+    { host: /^out\.reddit\.com$|^click\.redditmail\.com$/, params: ['url'] },
+    { host: /(^|\.)(x|twitter)\.com$/,         params: ['unsafe_link'] }
+  ];
   for (let i = 0; i < WRAPPERS.length; i++) {
-    const v = u.params[WRAPPERS[i]];
-    if (v && /^https?:\/\//i.test(v)) {
-      const inner = organicNormalize_(v);
-      if (inner) return organicUnwrap_(inner, depth + 1);
+    if (!WRAPPERS[i].host.test(u.host)) continue;
+    const names = WRAPPERS[i].params;
+    for (let j = 0; j < names.length; j++) {
+      const v = u.params[names[j]];
+      if (v && /^https?:\/\//i.test(v)) {
+        const inner = organicNormalize_(v);
+        if (inner) return organicUnwrap_(inner, depth + 1);
+      }
     }
   }
   return u;
@@ -3375,7 +3440,8 @@ function resolveOrganicPostRef(raw) {
   // A bare ID pasted straight in is accepted as-is: the taxonomy stores the ID,
   // not the URL, so re-pasting a generated value must round-trip.
   if (!/[\/\s]/.test(s) && !/^https?:/i.test(s)) {
-    if (/^[A-Za-z0-9_-]{5,80}$/.test(s)) return { postId: s, handle: null, status: ORGANIC_STATUS.OK, reason: 'Accepted as a post ID', platform: null };
+    // ':' is allowed because LinkedIn keys are typed ("ugcPost:7492...").
+    if (/^[A-Za-z0-9_:-]{5,80}$/.test(s)) return { postId: s, handle: null, status: ORGANIC_STATUS.OK, reason: 'Accepted as a post ID', platform: null };
     return { postId: null, handle: null, status: ORGANIC_STATUS.MALFORMED, reason: '"' + s + '" is neither a URL nor a valid post ID', platform: null };
   }
   const r = parseOrganicPostUrl(s);

@@ -96,14 +96,29 @@ repo. Two consequences worth knowing:
   identifiers, and TikTok Shop product IDs and Reddit comment IDs are the same
   shape as post IDs from other namespaces. These fail loudly rather than emitting
   a key that would join to the wrong thing, or to nothing.
+- **LinkedIn keys are typed**, e.g. `activity:7333162625675038720` or
+  `ugcPost:7492642684633968640`. LinkedIn runs three post namespaces and an
+  activity ID is a *different number* from its content ID for the same post, so
+  storing bare digits would silently merge two different posts. Every other
+  platform emits a bare ID.
 
 **Required when Asset Type is `Boosted`** — a boosted ad is an organic post with
 spend behind it, so it always has a parent post. The rule is declared once, on the
 field's `requiredWhen` in `code.gs`, and read from there by the form, the validator
 and the build path.
 
-**Empty means "not recorded", never "no organic post"** — every ad named before
-this field existed has a NULL `ext_p3_organic_post_id`.
+**The post-ID position is always written.** Creative with no organic parent gets
+the `NA` sentinel the taxonomy already uses for the handle and the custom
+identifier, so slot 11 has one shape rather than two:
+
+```
+… | gisellelangley ~ DdbhlHZOdfw | NA     ← has an organic parent
+… | gisellelangley ~ NA          | NA     ← confirmed none
+… | gisellelangley               | NA     ← named before this field existed
+```
+
+`PAID_MEDIA_UNIFIED` collapses both `NA` and the legacy empty case to NULL, so
+`ext_p3_organic_post_id IS NULL` covers "nothing to join to" either way.
 
 ## Deploying
 
