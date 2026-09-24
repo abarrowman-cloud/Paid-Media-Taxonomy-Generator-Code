@@ -152,6 +152,11 @@ const TAXONOMY = {
       { key: 'startDate',   label: 'Start Date',                    type: 'date',     required: true },
       { key: 'endDate',     label: 'End Date',                      type: 'date',     required: true },
       { key: 'influencer',  label: 'Influencer Handle',             type: 'text',     required: false, emptyDefault: 'NA' },
+      { key: 'organicPostUrl', label: 'Organic Post URL or ID',      type: 'url',      required: false, pairsWith: 'influencer',
+        // A Boosted ad IS an organic post with spend behind it, so it always
+        // has a parent to point at. Dark-posted and Organic assets may not.
+        requiredWhen: { field: 'assetType', equals: ['Boosted'] },
+        note: 'Paste the full organic post URL — the post ID is extracted automatically. Required when Asset Type is Boosted.' },
       { key: 'customId',    label: 'Custom Identifier',             type: 'text',     required: false, emptyDefault: 'NA' }
     ]
   }
@@ -255,8 +260,25 @@ function buildOutput(level, v) {
 
   if (level === 'P3') {
     // Strip leading "@" from the influencer handle for consistency.
-    const influencer = f(v.influencer).replace(/^@+/, '') || 'NA';
-    const customId   = f(v.customId)   || 'NA';
+    const handle   = f(v.influencer).replace(/^@+/, '') || 'NA';
+    const customId = f(v.customId)   || 'NA';
+    // Organic post ID rides INSIDE the influencer segment as "{handle} ~ {postId}".
+    // It is deliberately not its own pipe segment: the downstream dynamic table
+    // parses the ad name by position, so a 14th segment would shift
+    // ext_p3_ad_custom_identifier and silently re-read every historical row.
+    // Packing it here keeps the segment count at 13 and mirrors the existing
+    // "LP: {domain} ~ {category} ({sku})" pattern.
+    if (!f(v.organicPostUrl) && isOrganicPostRequired_(v)) {
+      throw new Error('Organic Post URL is required when Asset Type is "' + f(v.assetType) + '" — a boosted ad is an organic post with spend behind it, so it always has a parent post to point at.');
+    }
+    const organicRef = resolveOrganicPostRef(f(v.organicPostUrl));
+    if (f(v.organicPostUrl) && !organicRef.postId) {
+      throw new Error('Organic Post URL "' + f(v.organicPostUrl) + '" did not yield a usable post ID (' + organicRef.status + '): ' + organicRef.reason);
+    }
+    // No organic parent (dark-posted brand creative) emits the handle alone —
+    // the same shape every historical name already has. NULL is the honest
+    // value downstream, so no "~ NA" filler is written.
+    const influencer = organicRef.postId ? (handle + ' ~ ' + organicRef.postId) : handle;
     const productCat = f(v.productCat);
     const productSku = f(v.productSku);
     const landingPage = f(v.landingPage);
@@ -612,7 +634,9 @@ function parseName(level, name) {
           bodyCopy: (ap[6] || '').replace(/^BC:\s*/, ''),
           cta:      (ap[7] || '').replace(/^CTA:\s*/, ''),
           startDate: ap[9] || '', endDate: ap[10] || '',
-          influencer: ap[11] || '', customId: ap[12] || ''
+          influencer: String(ap[11] || '').split('~')[0].trim(),
+          organicPostUrl: (String(ap[11] || '').split('~')[1] || '').trim(),
+          customId: ap[12] || ''
         };
         // Parse the LP segment (slot 8) into domain/category/SKU or domain/landingPage.
         const lpSeg = (ap[8] || '').replace(/^LP:\s*/, '');
@@ -685,7 +709,18 @@ function parseName(level, name) {
       }
       values.startDate  = parts[9]  || '';
       values.endDate    = parts[10] || '';
-      values.influencer = parts[11] || '';
+      // Slot 11 is "{handle}" or "{handle} ~ {postId}". Splitting on "~" is
+      // safe in both directions: "~" is a reserved character, so it can never
+      // appear in a handle, and a slot without one yields the handle whole.
+      const infSeg = parts[11] || '';
+      const infM = infSeg.match(/^(.*?)\s*~\s*(.+)$/);
+      if (infM) {
+        values.influencer     = infM[1].trim();
+        values.organicPostUrl = infM[2].trim();
+      } else {
+        values.influencer     = infSeg;
+        values.organicPostUrl = '';
+      }
       values.customId   = parts[12] || '';
       return { ok: issues.length === 0, values: values, issues: issues };
     }
@@ -708,6 +743,18 @@ function detectLevel(name) {
 // =========================================================================
 // VALIDATION
 // =========================================================================
+
+/**
+ * Is the Organic Post URL required for this set of P3 values?
+ * Reads the field's own `requiredWhen` declaration so the rule lives in one
+ * place and the form, the validator and the build path cannot drift apart.
+ */
+function isOrganicPostRequired_(values) {
+  const fld = (TAXONOMY.P3.fields || []).filter(function(x) { return x.key === 'organicPostUrl'; })[0];
+  if (!fld || !fld.requiredWhen) return false;
+  const actual = String((values || {})[fld.requiredWhen.field] || '').trim().toLowerCase();
+  return (fld.requiredWhen.equals || []).some(function(v) { return String(v).trim().toLowerCase() === actual; });
+}
 
 function validateValues(level, values, spec) {
   // Returns an array of { field: <fieldKey|null>, message: <string> }.
@@ -788,6 +835,18 @@ function validateValues(level, values, spec) {
   }
 
   if (level === 'P3') {
+    const orgRaw = String(values.organicPostUrl || '').trim();
+    if (!orgRaw) {
+      if (isOrganicPostRequired_(values)) {
+        add('organicPostUrl', 'Organic Post URL: required when Asset Type is "' + values.assetType + '" — a boosted ad always has an organic parent post');
+      }
+    } else {
+      const ref = resolveOrganicPostRef(orgRaw);
+      if (!ref.postId) {
+        add('organicPostUrl', 'Organic Post URL: ' + (ref.reason || 'could not extract a post ID') + ' (' + ref.status + ')');
+      }
+    }
+
     const products = loadProducts();
     const hasProductFields = !!(values.productSku || values.productCat);
     const hasLandingPage   = !!values.landingPage;
@@ -1037,6 +1096,16 @@ function pairDates_(startList, endList) {
 function generateAtLevel_(level, selections, pairedKeys) {
   const pairedSet = {};
   (pairedKeys || []).forEach(function(k) { pairedSet[k] = true; });
+
+  // A post ID belongs to exactly one creator, so Organic Post URL and
+  // Influencer Handle must zip row-by-row rather than cartesian-multiply —
+  // otherwise 3 handles x 3 URLs would emit 9 ads, 6 of them crediting the
+  // wrong creator. Forced ON only when post URLs are actually supplied, so
+  // existing pairing behaviour for handle-only input is untouched.
+  if (level === 'P3' && toTrimmedArray(selections.organicPostUrl).length > 0) {
+    pairedSet.organicPostUrl = true;
+    pairedSet.influencer     = true;
+  }
 
   // P3-specific: derive the pair list (SKU/Cat) or LP list up front
   let p3Pairs = null;
@@ -2788,4 +2857,539 @@ function ensureDomainMapSheet() {
     ).setFontColor('#555').setFontStyle('italic');
   }
   return { ok: true, existed: existed, sheetName: DOMAIN_MAP_SHEET_NAME, url: ss.getUrl() };
+}
+
+// =========================================================================
+// ORGANIC POST URL → POST ID EXTRACTION
+//
+// Implements docs/organic-url-patterns from the Paid-Media-Unified-Data-Table
+// repo. A pasted organic post URL is reduced to a stable post ID that becomes
+// the paid↔organic join key, carried inside the P3 Influencer Handle segment
+// as "{handle} ~ {postId}".
+//
+// Five rules from that spec drive the implementation and are easy to undo by
+// accident, so they are called out where they apply:
+//   1. Gate on the PATH SEGMENT, never on the shape of the identifier.
+//   2. Every ID is a STRING. 19-digit IDs exceed IEEE-754 and corrupt silently.
+//   3. Hyphen goes first or last in a character class. \w excludes "-".
+//   4. Never put the username in the key. Handles are mutable.
+//   5. Extract identity first, strip parameters second.
+// =========================================================================
+
+/** Families that are a redirect, not an encoding — they cannot be decoded
+ *  offline and must be fetched. Resolutions are immutable, so they are cached
+ *  permanently. */
+const ORGANIC_REDIRECT_CAP = 3;
+const ORGANIC_CACHE_PREFIX = 'orgurl_v1_';
+
+/** Result status vocabulary — mirrors the shared spec. These answer different
+ *  questions and must not collapse into a generic failure. */
+const ORGANIC_STATUS = {
+  OK: 'ok',
+  NEEDS_RESOLUTION: 'needs_resolution',
+  UNSUPPORTED: 'unsupported_url',
+  MALFORMED: 'malformed_url',
+  WRONG_NAMESPACE: 'wrong_namespace',
+  NOT_A_POST: 'not_a_post',
+  RESOLUTION_FAILED: 'shortlink_resolution_failed',
+  NO_DURABLE_ID: 'no_durable_id'
+};
+
+/** base64url alphabet used by Instagram and Threads shortcodes. */
+const ORGANIC_B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+function organicResult_(fields) {
+  return {
+    status: fields.status || ORGANIC_STATUS.UNSUPPORTED,
+    platform: fields.platform || null,
+    postId: fields.postId || null,
+    handle: fields.handle || null,
+    surfaceType: fields.surfaceType || null,
+    reason: fields.reason || '',
+    inputUrl: fields.inputUrl || '',
+    resolvedUrl: fields.resolvedUrl || null
+  };
+}
+
+/**
+ * Normalize a pasted URL far enough to classify it.
+ * Lowercases the HOST ONLY — path and query values are case-significant for
+ * YouTube IDs, Instagram/Threads shortcodes, Snapchat Spotlight IDs, Twitch
+ * clip slugs and Reddit share tokens.
+ */
+function organicNormalize_(raw) {
+  let s = String(raw == null ? '' : raw).trim();
+  if (!s) return null;
+  s = s.replace(/&amp;/g, '&');           // came from HTML
+  if (!/^https?:\/\//i.test(s)) {
+    if (/^[a-z0-9.-]+\.[a-z]{2,}\//i.test(s) || /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(s)) s = 'https://' + s;
+    else return null;
+  }
+  const m = s.match(/^(https?):\/\/([^\/?#]+)([^?#]*)(\?[^#]*)?(#.*)?$/i);
+  if (!m) return null;
+  const host = m[2].toLowerCase().replace(/^www\./, '').replace(/:\d+$/, '');
+  const path = m[3] || '/';
+  const query = m[4] || '';
+  const params = {};
+  query.replace(/^\?/, '').split('&').forEach(function(kv) {
+    if (!kv) return;
+    const i = kv.indexOf('=');
+    const k = (i === -1 ? kv : kv.slice(0, i)).toLowerCase();
+    const v = i === -1 ? '' : kv.slice(i + 1);
+    try { params[k] = decodeURIComponent(v.replace(/\+/g, ' ')); } catch (e) { params[k] = v; }
+  });
+  return {
+    host: host,
+    path: path,
+    params: params,
+    segs: path.split('/').filter(function(x) { return x !== ''; }),
+    fragment: (m[5] || '').replace(/^#/, '')
+  };
+}
+
+/** Rule 2: keep 19-digit IDs exact. BigInt, never Number. */
+function organicBigInt_(s) {
+  try { return BigInt(String(s)); } catch (e) { return null; }
+}
+
+// ---- Structural validation available for free ----------------------------
+
+/** TikTok aweme_id embeds a creation timestamp in its high 32 bits. Rejects
+ *  TikTok Shop product IDs, sound IDs and collection IDs, which are the same
+ *  19-digit shape. */
+function organicValidTikTok_(id) {
+  if (!/^\d{6,21}$/.test(id)) return false;
+  const n = organicBigInt_(id);
+  if (n === null) return false;
+  const ts = Number(n >> 32n);
+  return ts > 1000000000 && ts < (Math.floor(Date.now() / 1000) + 86400);
+}
+
+/** X Snowflake. Pre-2010-11-04 IDs are not Snowflakes; they are still valid
+ *  post IDs, so only the derived date is unavailable, not the ID. */
+function organicValidX_(id) {
+  return /^\d{1,20}$/.test(id);
+}
+
+/** Pinterest encodes a type nibble; 1 means "pin". Rejects board, user and
+ *  topic IDs that are otherwise indistinguishable. */
+function organicValidPinterest_(id) {
+  // Length is a function of shard, not age: 16-19 digits observed, not fixed.
+  if (!/^\d{1,20}$/.test(id)) return false;
+  const n = organicBigInt_(id);
+  if (n === null) return false;
+  return Number((n >> 36n) & 0x3ffn) === 1;
+}
+
+/** Instagram / Threads shortcode → media ID, sanity-checked against a
+ *  plausible creation date. Rejects Graph API media IDs and highlight IDs fed
+ *  in by mistake. */
+function organicValidShortcode_(code) {
+  if (!/^[A-Za-z0-9_-]{10,12}$/.test(code)) return false;
+  let n = 0n;
+  for (let i = 0; i < code.length; i++) {
+    const idx = ORGANIC_B64.indexOf(code.charAt(i));
+    if (idx === -1) return false;
+    n = n * 64n + BigInt(idx);
+  }
+  const createdMs = Number(n >> 23n) + 1314220021721;
+  return createdMs > 1314220021721 && createdMs < (Date.now() + 86400000);
+}
+
+// ---- Per-platform matchers -----------------------------------------------
+// Rule 1: every matcher gates on the path segment. Ordered most-specific first.
+// Rule 4: handle is captured for display only and is never part of the key.
+
+function organicMatchInstagram_(u) {
+  const s = u.segs;
+  // Not posts — checked before the post families so they cannot fall through.
+  if (s[0] === 'reels' && s[1] === 'audio') return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'instagram', reason: 'Reels audio page, not a post' });
+  if (s[0] === 'stories' && s[1] === 'highlights') return organicResult_({ status: ORGANIC_STATUS.WRONG_NAMESPACE, platform: 'instagram', reason: 'Highlight IDs are a different namespace from post IDs' });
+  if (u.host === 'ig.me') return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'instagram', reason: 'ig.me is a direct-message deep link, not a post' });
+  if (s[0] === 'share') return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'instagram', reason: 'Instagram /share/ link must be resolved' });
+
+  // Story: numeric media ID, same namespace, but the URL dies after 24h.
+  if (s[0] === 'stories' && s.length >= 3 && /^\d+$/.test(s[2])) {
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'instagram', postId: s[2], handle: s[1], surfaceType: 'story' });
+  }
+  // Post families. The path segment (p/reel/reels/tv) is NOT part of identity.
+  const KINDS = { p: 'post', reel: 'reel', reels: 'reel', tv: 'video' };
+  for (let i = 0; i < s.length - 1; i++) {
+    if (Object.prototype.hasOwnProperty.call(KINDS, s[i])) {
+      const code = s[i + 1];
+      if (!organicValidShortcode_(code)) {
+        return organicResult_({ status: ORGANIC_STATUS.MALFORMED, platform: 'instagram', reason: '"' + code + '" is not a valid Instagram shortcode' });
+      }
+      // /{username}/p/{code}/ carries a handle; /p/{code}/ does not.
+      const handle = (i > 0 && !Object.prototype.hasOwnProperty.call(KINDS, s[i - 1])) ? s[i - 1] : null;
+      return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'instagram', postId: code, handle: handle, surfaceType: KINDS[s[i]] });
+    }
+  }
+  if (s.length === 1) return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'instagram', handle: s[0], reason: 'Profile URL, not a post' });
+  return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'instagram', reason: 'Unrecognised Instagram URL' });
+}
+
+function organicMatchThreads_(u) {
+  const s = u.segs;
+  if (s.length >= 3 && /^@/.test(s[0]) && s[1] === 'post') {
+    const code = s[2];
+    if (!organicValidShortcode_(code)) return organicResult_({ status: ORGANIC_STATUS.MALFORMED, platform: 'threads', reason: '"' + code + '" is not a valid Threads shortcode' });
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'threads', postId: code, handle: s[0].replace(/^@/, ''), surfaceType: 'post' });
+  }
+  if (s.length >= 2 && s[0] === 't') {
+    const code = s[1];
+    if (!organicValidShortcode_(code)) return organicResult_({ status: ORGANIC_STATUS.MALFORMED, platform: 'threads', reason: '"' + code + '" is not a valid Threads shortcode' });
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'threads', postId: code, surfaceType: 'post' });
+  }
+  if (s.length === 1 && /^@/.test(s[0])) return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'threads', handle: s[0].replace(/^@/, ''), reason: 'Profile URL, not a post' });
+  return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'threads', reason: 'Unrecognised Threads URL' });
+}
+
+function organicMatchTikTok_(u) {
+  const s = u.segs;
+  if (u.host === 'shop.tiktok.com') return organicResult_({ status: ORGANIC_STATUS.WRONG_NAMESPACE, platform: 'tiktok', reason: 'TikTok Shop product ID — 19 digits, but a different namespace from post IDs' });
+  if (u.host === 'vm.tiktok.com' || u.host === 'vt.tiktok.com' || s[0] === 't') {
+    return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'tiktok', reason: 'TikTok short link must be resolved' });
+  }
+  if (s[0] === 'music' || s[0] === 'sticker' || s[0] === 'tag') return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'tiktok', reason: '/' + s[0] + '/ is not a post' });
+  if (s.length >= 2 && /^@/.test(s[0]) && s[1] === 'collection') return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'tiktok', reason: 'Collection page, not a post' });
+  if (s.length >= 2 && /^@/.test(s[0]) && s[1] === 'live') return organicResult_({ status: ORGANIC_STATUS.NO_DURABLE_ID, platform: 'tiktok', reason: 'Live pointer carries no post ID' });
+
+  let id = null, handle = null, surface = 'video';
+  if (s.length >= 3 && /^@/.test(s[0]) && (s[1] === 'video' || s[1] === 'photo')) {
+    id = s[2]; handle = s[0].replace(/^@/, '') || null; surface = s[1] === 'photo' ? 'photo' : 'video';
+  } else if (s.length >= 3 && s[0] === 'share' && s[1] === 'video') {
+    id = s[2];
+  } else if (s.length >= 4 && s[0] === 'i18n' && s[1] === 'share' && s[2] === 'video') {
+    id = s[3];
+  } else if (s.length >= 2 && s[0] === 'v') {
+    id = s[1].replace(/\.html$/i, '');
+  } else if (s.length >= 3 && s[0] === 'embed' && s[1] === 'v2') {
+    id = s[2];                                  // language segment comes AFTER the ID
+  } else if (s.length >= 2 && s[0] === 'embed') {
+    id = s[1];
+  }
+  if (!id) {
+    if (s.length === 1 && /^@/.test(s[0])) return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'tiktok', handle: s[0].replace(/^@/, ''), reason: 'Profile URL, not a post' });
+    return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'tiktok', reason: 'Unrecognised TikTok URL' });
+  }
+  if (!organicValidTikTok_(id)) return organicResult_({ status: ORGANIC_STATUS.WRONG_NAMESPACE, platform: 'tiktok', reason: '"' + id + '" does not decode to a plausible TikTok post timestamp — likely a Shop product, sound or collection ID' });
+  return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'tiktok', postId: id, handle: handle, surfaceType: surface });
+}
+
+function organicMatchYouTube_(u) {
+  const s = u.segs;
+  const VALID = /^[A-Za-z0-9_-]{11}$/;          // rule 3: hyphen last, and IDs can START with "-"
+  if (s[0] === 'clip') return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'youtube', reason: 'YouTube clip — a separate namespace; the parent video needs a lookup' });
+  if (s[0] === 'post') return organicResult_({ status: ORGANIC_STATUS.WRONG_NAMESPACE, platform: 'youtube', reason: 'Community post, a separate namespace from video IDs' });
+  if (s[0] === 'playlist' || s[0] === 'channel' || /^@/.test(s[0] || '')) return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'youtube', reason: 'Channel or playlist URL, not a video' });
+
+  let id = null;
+  if (u.host === 'youtu.be' && s.length >= 1) id = s[0];
+  else if (u.params['v']) id = u.params['v'];
+  else if (s.length >= 2 && (s[0] === 'shorts' || s[0] === 'live' || s[0] === 'embed' || s[0] === 'v' || s[0] === 'e')) id = s[1];
+  else if (u.params['video_ids']) id = String(u.params['video_ids']).split(',')[0];
+
+  if (!id) return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'youtube', reason: 'Unrecognised YouTube URL' });
+  if (!VALID.test(id)) return organicResult_({ status: ORGANIC_STATUS.MALFORMED, platform: 'youtube', reason: '"' + id + '" is not an 11-character YouTube video ID' });
+  return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'youtube', postId: id, surfaceType: s[0] === 'shorts' ? 'short' : 'video' });
+}
+
+function organicMatchX_(u) {
+  const s = u.segs;
+  if (u.host === 't.co') return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'x', reason: 't.co link must be resolved' });
+  if (s[0] === 'i' && (s[1] === 'spaces' || s[1] === 'broadcasts')) return organicResult_({ status: ORGANIC_STATUS.WRONG_NAMESPACE, platform: 'x', reason: '/' + s[1] + '/ is a different namespace from post IDs' });
+  if (s[0] === 'i' && s[1] === 'events') return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'x', reason: 'Moments/events collection, not a post' });
+
+  let id = null, handle = null;
+  const statusIdx = s.indexOf('status') !== -1 ? s.indexOf('status') : s.indexOf('statuses');
+  if (statusIdx !== -1 && s.length > statusIdx + 1) {
+    id = s[statusIdx + 1];
+    if (statusIdx > 0 && s[statusIdx - 1] !== 'i' && s[statusIdx - 1] !== 'web') handle = s[statusIdx - 1];
+  } else if (s.length >= 3 && s[1] === 'article') {
+    id = s[2]; handle = s[0];                   // X Article — same ID space, easily missed
+  } else if (s[0] === 'i' && s[1] === 'cards' && s[2] === 'tfw' && s.length >= 5) {
+    id = s[4];
+  } else if (s[0] === 'i' && s[1] === 'videos' && s[2] === 'tweet' && s.length >= 4) {
+    id = s[3];
+  } else if (u.params['post_id']) {
+    id = u.params['post_id'];                   // /i/bookmarks?post_id= — ID is in the QUERY
+  }
+  if (!id) {
+    if (s.length === 1) return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'x', handle: s[0], reason: 'Profile URL, not a post' });
+    return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'x', reason: 'Unrecognised X URL' });
+  }
+  if (!organicValidX_(id)) return organicResult_({ status: ORGANIC_STATUS.MALFORMED, platform: 'x', reason: '"' + id + '" is not a numeric X post ID' });
+  return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'x', postId: id, handle: handle, surfaceType: 'post' });
+}
+
+function organicMatchReddit_(u) {
+  const s = u.segs;
+  if (u.host === 'redd.it' && s.length >= 1 && /^[a-z0-9]{5,8}$/i.test(s[0])) {
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'reddit', postId: s[0].toLowerCase(), surfaceType: 'post' });
+  }
+  if (s.indexOf('s') !== -1 && s[0] === 'r' && s[2] === 's') return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'reddit', reason: 'Reddit /s/ share link must be resolved — it may land on a comment, not the post' });
+  if (s[0] === 'video') return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'reddit', reason: 'Reddit /video/ link must be resolved' });
+
+  // The post ID is the segment AFTER "comments". A comment permalink has more
+  // segments after it — those are the comment ID, which must NOT be returned.
+  const ci = s.indexOf('comments');
+  if (ci !== -1 && s.length > ci + 1) {
+    const id = s[ci + 1];
+    if (!/^[a-z0-9]{5,8}$/i.test(id)) return organicResult_({ status: ORGANIC_STATUS.MALFORMED, platform: 'reddit', reason: '"' + id + '" is not a base36 Reddit post ID' });
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'reddit', postId: id.toLowerCase(), surfaceType: 'post' });
+  }
+  return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'reddit', reason: 'Unrecognised Reddit URL' });
+}
+
+function organicMatchPinterest_(u) {
+  const s = u.segs;
+  if (u.host === 'pin.it') return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'pinterest', reason: 'pin.it link must be resolved (multi-hop)' });
+  if (s[0] === 'ideas') return organicResult_({ status: ORGANIC_STATUS.WRONG_NAMESPACE, platform: 'pinterest', reason: 'Ideas topic ID, not a pin ID' });
+  if (s[0] === 'pin' && s.length >= 2) {
+    // "/pin/{slug}--{id}/" — DOUBLE hyphen. A single hyphen is TikTok's music
+    // form; a shared helper mis-parses one of the two.
+    let raw = s[1];
+    const dbl = raw.match(/--(\d+)$/);
+    const id = dbl ? dbl[1] : raw;
+    if (!/^\d+$/.test(id)) return organicResult_({ status: ORGANIC_STATUS.MALFORMED, platform: 'pinterest', reason: '"' + raw + '" does not contain a numeric pin ID' });
+    if (!organicValidPinterest_(id)) return organicResult_({ status: ORGANIC_STATUS.WRONG_NAMESPACE, platform: 'pinterest', reason: '"' + id + '" is not a pin ID (board, user or topic IDs decode differently)' });
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'pinterest', postId: id, surfaceType: 'post' });
+  }
+  return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'pinterest', reason: 'Unrecognised Pinterest URL' });
+}
+
+function organicMatchSnapchat_(u) {
+  const s = u.segs;
+  if (u.host === 't.snapchat.com' || s[0] === 't') return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'snapchat', reason: 'Snapchat short link must be resolved' });
+  // Spotlight is the ONLY Snapchat surface with a durable public post ID.
+  const si = s.indexOf('spotlight');
+  if (si !== -1 && s.length > si + 1) {
+    const id = s[si + 1];
+    if (!/^[A-Za-z0-9_-]{20,80}$/.test(id)) return organicResult_({ status: ORGANIC_STATUS.MALFORMED, platform: 'snapchat', reason: '"' + id + '" is not a Spotlight ID' });
+    const handle = (si > 0 && /^@/.test(s[si - 1])) ? s[si - 1].replace(/^@/, '') : null;
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'snapchat', postId: id, handle: handle, surfaceType: 'video' });
+  }
+  if (s[0] === 'p') return organicResult_({ status: ORGANIC_STATUS.NOT_A_POST, platform: 'snapchat', reason: '/p/{uuid}/{numeric} is a profile, not a post' });
+  return organicResult_({ status: ORGANIC_STATUS.NO_DURABLE_ID, platform: 'snapchat', reason: 'Only Spotlight posts have a durable public ID — regular Stories do not' });
+}
+
+function organicMatchTwitch_(u) {
+  const s = u.segs;
+  if (s[0] === 'videos' && s.length >= 2 && /^\d+$/.test(s[1])) {
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'twitch', postId: s[1], surfaceType: 'video' });
+  }
+  // Clip slugs are globally unique regardless of the channel segment, so the
+  // channel must never enter the key — and the same slug under two channel
+  // names must dedupe to one clip.
+  const ci = s.indexOf('clip');
+  if (ci !== -1 && s.length > ci + 1) {
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'twitch', postId: s[ci + 1], handle: ci > 0 ? s[ci - 1] : null, surfaceType: 'clip' });
+  }
+  if (u.host === 'clips.twitch.tv' && s.length >= 1) {
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'twitch', postId: s[s.length - 1], handle: s.length > 1 ? s[0] : null, surfaceType: 'clip' });
+  }
+  return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'twitch', reason: 'Unrecognised Twitch URL' });
+}
+
+function organicMatchFacebook_(u) {
+  const s = u.segs;
+  const joined = u.path + (u.params['story_fbid'] || '') + (u.params['id'] || '');
+  // Since Sept 2022 Facebook serves obfuscated pfbid tokens. Multiple distinct
+  // values resolve to the same post and the value varies by viewer and over
+  // time. Joining on one produces confidently wrong numbers, so it is refused
+  // outright rather than emitted as a key.
+  if (/pfbid/i.test(joined)) {
+    return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'facebook', reason: 'Facebook pfbid tokens are not stable identifiers — source the post ID from a platform export instead' });
+  }
+  if (s[0] === 'share' || u.host === 'fb.watch' || u.host === 'fb.me') {
+    return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'facebook', reason: 'Facebook share link must be resolved' });
+  }
+  if (u.params['fbid'] && /^\d+$/.test(u.params['fbid'])) {
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'facebook', postId: u.params['fbid'], surfaceType: 'photo' });
+  }
+  if (u.params['story_fbid'] && /^\d+$/.test(u.params['story_fbid'])) {
+    const page = u.params['id'];
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'facebook', postId: (page && /^\d+$/.test(page)) ? (page + '_' + u.params['story_fbid']) : u.params['story_fbid'], surfaceType: 'post' });
+  }
+  // Group posts carry a hex segment; the ID is the LAST numeric segment.
+  const numeric = s.filter(function(x) { return /^\d+$/.test(x); });
+  const kind = ['posts', 'videos', 'photos', 'reel'].filter(function(k) { return s.indexOf(k) !== -1; })[0];
+  if (kind && numeric.length > 0) {
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'facebook', postId: numeric[numeric.length - 1], surfaceType: kind === 'reel' ? 'reel' : 'post' });
+  }
+  return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'facebook', reason: 'Unrecognised Facebook URL' });
+}
+
+function organicMatchLinkedIn_(u) {
+  const s = u.segs;
+  if (u.host === 'lnkd.in') return organicResult_({ status: ORGANIC_STATUS.NEEDS_RESOLUTION, platform: 'linkedin', reason: 'lnkd.in link must be resolved' });
+  const urn = u.path.match(/urn:li:(activity|ugcPost|share):(\d+)/i);
+  if (urn) return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'linkedin', postId: urn[2], surfaceType: 'post' });
+  // "/posts/{slug}-{numeric}-{hash}" — the activity ID is the long numeric run.
+  if (s[0] === 'posts' && s.length >= 2) {
+    const m = s[1].match(/(\d{15,25})/);
+    if (m) return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'linkedin', postId: m[1], surfaceType: 'post' });
+  }
+  return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'linkedin', reason: 'Unrecognised LinkedIn URL' });
+}
+
+// ---- Router ---------------------------------------------------------------
+
+/** Host → matcher. Checked as an exact host or a suffix match so country
+ *  subdomains and ccTLDs (e.g. "de.pinterest.com", "pinterest.co.uk") route
+ *  correctly. */
+function organicRouteHost_(host) {
+  const H = [
+    [/(^|\.)instagram\.com$|^ig\.me$/, organicMatchInstagram_],
+    [/(^|\.)threads\.(com|net)$/,      organicMatchThreads_],
+    [/(^|\.)tiktok\.com$|(^|\.)tiktokv\.com$/, organicMatchTikTok_],
+    [/(^|\.)youtube\.com$|^youtu\.be$/, organicMatchYouTube_],
+    [/(^|\.)(x|twitter)\.com$|^t\.co$/, organicMatchX_],
+    [/(^|\.)reddit\.com$|^redd\.it$/,   organicMatchReddit_],
+    [/(^|\.)pinterest\.[a-z.]{2,7}$|^pin\.it$/, organicMatchPinterest_],
+    [/(^|\.)snapchat\.com$/,            organicMatchSnapchat_],
+    [/(^|\.)twitch\.tv$/,               organicMatchTwitch_],
+    [/(^|\.)facebook\.com$|^fb\.watch$|^fb\.me$/, organicMatchFacebook_],
+    [/(^|\.)linkedin\.com$|^lnkd\.in$/, organicMatchLinkedIn_]
+  ];
+  for (let i = 0; i < H.length; i++) if (H[i][0].test(host)) return H[i][1];
+  return null;
+}
+
+/** Unwrap the URL-in-URL wrappers listed in the shared normalization contract.
+ *  Depth-capped so a hand-crafted loop cannot hang the script. */
+function organicUnwrap_(u, depth) {
+  if (!u || depth >= ORGANIC_REDIRECT_CAP) return u;
+  const WRAPPERS = ['href', 'u', 'url', 'unsafe_link', 'continue'];
+  for (let i = 0; i < WRAPPERS.length; i++) {
+    const v = u.params[WRAPPERS[i]];
+    if (v && /^https?:\/\//i.test(v)) {
+      const inner = organicNormalize_(v);
+      if (inner) return organicUnwrap_(inner, depth + 1);
+    }
+  }
+  return u;
+}
+
+/**
+ * Classify one URL without any network access.
+ * Returns a result whose status is NEEDS_RESOLUTION for opaque token families.
+ */
+function organicParseOffline_(raw) {
+  const u0 = organicNormalize_(raw);
+  if (!u0) return organicResult_({ status: ORGANIC_STATUS.MALFORMED, reason: 'Not a URL', inputUrl: String(raw || '') });
+  const u = organicUnwrap_(u0, 0);
+  const matcher = organicRouteHost_(u.host);
+  if (!matcher) return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, reason: 'No parser for host "' + u.host + '"', inputUrl: String(raw || '') });
+  const res = matcher(u);
+  res.inputUrl = String(raw || '');
+  return res;
+}
+
+// ---- Short-link resolution ------------------------------------------------
+
+/**
+ * Follow one opaque short link to its destination.
+ * Every one of these families is a redirect, not an encoding, so it cannot be
+ * decoded offline. Resolutions are immutable once made, which is why the
+ * result is cached against the token forever rather than for a TTL.
+ */
+function organicResolveShortLink_(raw) {
+  const props = PropertiesService.getScriptProperties();
+  const key = ORGANIC_CACHE_PREFIX + Utilities.base64EncodeWebSafe(String(raw)).slice(0, 200);
+  const cached = props.getProperty(key);
+  if (cached) return cached;
+
+  let url = String(raw);
+  try {
+    for (let hop = 0; hop < ORGANIC_REDIRECT_CAP; hop++) {
+      const resp = UrlFetchApp.fetch(url, {
+        followRedirects: false,
+        muteHttpExceptions: true,
+        // A bot User-Agent is required for TikTok; the Sec-Fetch-* headers are
+        // what keep Instagram from serving a login wall instead of a redirect.
+        headers: {
+          'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none'
+        }
+      });
+      const code = resp.getResponseCode();
+      const loc = resp.getAllHeaders()['Location'] || resp.getAllHeaders()['location'];
+      if (code >= 300 && code < 400 && loc) {
+        url = Array.isArray(loc) ? loc[0] : loc;
+        // pin.it hops through /url_shortener/{token}/ before reaching the pin,
+        // so keep following rather than accepting the first Location.
+        continue;
+      }
+      break;
+    }
+  } catch (e) {
+    return null;
+  }
+  if (url && url !== String(raw)) {
+    try { props.setProperty(key, url); } catch (e) { /* quota — resolution still returned */ }
+    return url;
+  }
+  return null;
+}
+
+/**
+ * Full parse: offline first, then one resolution pass for opaque tokens.
+ * This is the entry point the UI and the build path both call.
+ */
+function parseOrganicPostUrl(raw) {
+  const first = organicParseOffline_(raw);
+  if (first.status !== ORGANIC_STATUS.NEEDS_RESOLUTION) return first;
+  // Facebook pfbid is unresolvable to a stable key by design — a fetch would
+  // return another pfbid, so it is not attempted.
+  if (first.platform === 'facebook' && /pfbid/i.test(String(raw))) return first;
+
+  const resolved = organicResolveShortLink_(raw);
+  if (!resolved) {
+    first.status = ORGANIC_STATUS.RESOLUTION_FAILED;
+    first.reason = 'Could not resolve this short link. Open it in a browser and paste the full post URL instead.';
+    return first;
+  }
+  const second = organicParseOffline_(resolved);
+  second.inputUrl = String(raw || '');
+  second.resolvedUrl = resolved;
+  if (second.status === ORGANIC_STATUS.NEEDS_RESOLUTION) {
+    second.status = ORGANIC_STATUS.RESOLUTION_FAILED;
+    second.reason = 'Resolved to another opaque link. Paste the full post URL instead.';
+  }
+  return second;
+}
+
+/**
+ * Accepts a pasted URL OR an already-extracted post ID, and returns the value
+ * to place after "~" in the Influencer Handle segment.
+ * Returns { postId, handle, status, reason, platform } — postId null when the
+ * input yields no usable key.
+ */
+function resolveOrganicPostRef(raw) {
+  const s = String(raw == null ? '' : raw).trim();
+  if (!s) return { postId: null, handle: null, status: 'empty', reason: '', platform: null };
+  // A bare ID pasted straight in is accepted as-is: the taxonomy stores the ID,
+  // not the URL, so re-pasting a generated value must round-trip.
+  if (!/[\/\s]/.test(s) && !/^https?:/i.test(s)) {
+    if (/^[A-Za-z0-9_-]{5,80}$/.test(s)) return { postId: s, handle: null, status: ORGANIC_STATUS.OK, reason: 'Accepted as a post ID', platform: null };
+    return { postId: null, handle: null, status: ORGANIC_STATUS.MALFORMED, reason: '"' + s + '" is neither a URL nor a valid post ID', platform: null };
+  }
+  const r = parseOrganicPostUrl(s);
+  return { postId: r.postId, handle: r.handle, status: r.status, reason: r.reason, platform: r.platform, surfaceType: r.surfaceType, resolvedUrl: r.resolvedUrl };
+}
+
+/** UI endpoint: resolve a newline-separated block in one round trip. */
+function resolveOrganicPostRefs(block) {
+  const lines = String(block == null ? '' : block).split(/\r?\n/);
+  return lines.map(function(line) {
+    const t = line.trim();
+    if (!t) return { input: '', postId: null, handle: null, status: 'empty', reason: '' };
+    const r = resolveOrganicPostRef(t);
+    r.input = t;
+    return r;
+  });
 }
