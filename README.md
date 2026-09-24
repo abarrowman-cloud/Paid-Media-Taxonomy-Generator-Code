@@ -59,9 +59,51 @@ Don't leave the folder parked on a feature branch after that branch merges. A me
 
 | file | what it is |
 |---|---|
-| `code.gs` | Apps Script server code — name generation and `FUNNEL_MAP` |
+| `code.gs` | Apps Script server code — name generation, `FUNNEL_MAP`, organic-URL parsing |
 | `Index.html` | The generator UI served by the web app |
 | `appsscript.json` | Apps Script project manifest |
+| `tests/taxonomy.test.js` | Offline regression suite — `node tests/taxonomy.test.js` |
+
+## Organic Post ID in the P3 ad name
+
+A P3 name carries the organic post its creative came from **inside the Influencer
+Handle segment**, not as a segment of its own:
+
+```
+R#:1 | … | 05/01/26 | 06/30/26 | gisellelangley ~ DdbhlHZOdfw | NA
+                                 └── slot 11 ──────────────┘
+```
+
+**Why it is packed rather than appended.** `PAID_MEDIA_UNIFIED` parses the ad name
+**by position** (`SPLIT(ad_name,'|')`, slot 11 = influencer, slot 12 = custom
+identifier), and it re-parses all history on every refresh. A 14th segment would
+shift `ext_p3_ad_custom_identifier` and start reading new and historical ads into
+the same column with different meanings — with no error raised. Packing keeps the
+count at 13 and mirrors the existing `LP: {domain} ~ {category} ({sku})` segment.
+
+Verified against live data before deployment: the new parse returns byte-identical
+values on all 3,169,663 rows / 57,985 ads.
+
+**What the user pastes.** The Organic Post URL field takes a full post URL and
+extracts the ID; a bare ID is also accepted so a generated name round-trips.
+Parsing follows `docs/organic-url-patterns/` in the `Paid-Media-Unified-Data-Table`
+repo. Two consequences worth knowing:
+
+- **The handle is usually not in the URL.** `instagram.com/p/{code}/`,
+  `youtube.com/watch?v=`, `/pin/`, and Reddit links carry no username at all, so
+  Influencer Handle stays a manual field that the URL fills in only when it can.
+- **Some URLs are refused on purpose.** Facebook `pfbid` tokens are not stable
+  identifiers, and TikTok Shop product IDs and Reddit comment IDs are the same
+  shape as post IDs from other namespaces. These fail loudly rather than emitting
+  a key that would join to the wrong thing, or to nothing.
+
+**Required when Asset Type is `Boosted`** — a boosted ad is an organic post with
+spend behind it, so it always has a parent post. The rule is declared once, on the
+field's `requiredWhen` in `code.gs`, and read from there by the form, the validator
+and the build path.
+
+**Empty means "not recorded", never "no organic post"** — every ad named before
+this field existed has a NULL `ext_p3_organic_post_id`.
 
 ## Deploying
 

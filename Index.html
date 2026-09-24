@@ -289,6 +289,11 @@
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .field-cell.wide  { grid-column: 1 / -1; }
+  /* A field that is required only under a condition (Organic Post URL when the
+     Asset Type is Boosted) — marked so the requirement is visible before the
+     user hits Generate, not only in the error that comes back. */
+  .field-cell.field-required-now { border-color: var(--vn-pink); background: var(--vn-soft); }
+  .field-cell.field-required-now .field-note { color: var(--vn-pink); font-weight: 700; }
   .field-cell.dbl   { grid-column: span 2; }
   .field-cell:focus-within { border-color: var(--vn-pink); box-shadow: 0 0 0 2px rgba(180,83,9,0.08); }
   .field-cell .field-header {
@@ -1167,7 +1172,9 @@ function renderGeneratorFields() {
       return;
     }
 
-    const requiredNote = fld.required ? '' : ' (optional)';
+    const requiredNote = fld.required ? ''
+      : (fld.requiredWhen ? ' (required when ' + fld.requiredWhen.field.replace(/([A-Z])/g, ' $1').toLowerCase().trim() + ' is ' + (fld.requiredWhen.equals || []).join(' or ') + ')'
+                          : ' (optional)');
     const fullNote = (fld.note ? ' · ' + fld.note : '') + requiredNote;
 
     const inheritHtml = inheritRowHtml(fld, level);
@@ -1197,7 +1204,9 @@ function renderGeneratorFields() {
 
     if (fld.type === 'dropdown') {
       // For P1 Brand, wire a callback so we can toggle Funding visibility
-      const onChangeFn = (level === 'P1' && fld.key === 'brand') ? 'onP1BrandSelectionChange' : null;
+      const onChangeFn = (level === 'P1' && fld.key === 'brand') ? 'onP1BrandSelectionChange'
+                       : (level === 'P3' && fld.key === 'assetType') ? 'onP3AssetTypeChange'
+                       : null;
       cell.innerHTML =
         fieldHeader_(num, fld.label, fullNote) +
         inheritHtml +
@@ -1220,11 +1229,19 @@ function renderGeneratorFields() {
     } else {
       // Influencer Handle: strip leading "@" on blur so values stored & displayed
       // are consistent (e.g. "@username" → "username") regardless of how the user pasted it.
-      const blurAttr = (fld.key === 'influencer') ? ' onblur="stripInfluencerAtSigns(this)"' : '';
+      const blurAttr = (fld.key === 'influencer') ? ' onblur="stripInfluencerAtSigns(this)"'
+                     : (fld.key === 'organicPostUrl') ? ' onblur="checkOrganicPostUrls()"' : '';
+      const placeholder = (fld.key === 'organicPostUrl')
+        ? 'One post URL per line — pairs with the handle on the same line'
+        : 'One value per line — each adds a combination';
       cell.innerHTML =
         fieldHeader_(num, fld.label, fullNote) +
         inheritHtml +
-        '<textarea id="gen_' + fld.key + '" rows="2" placeholder="One value per line — each adds a combination"' + blurAttr + '></textarea>' +
+        '<textarea id="gen_' + fld.key + '" rows="2" placeholder="' + placeholder + '"' + blurAttr + '></textarea>' +
+        (fld.key === 'organicPostUrl'
+          ? '<div class="hint">Paste the full post URL. The post ID is extracted and stored with the handle as <code>handle ~ postId</code>; the URL itself is not written into the name.</div>' +
+            '<div id="gen_organicPostUrl_status" class="hint" style="margin-top:6px;"></div>'
+          : '') +
         (fld.type === 'text' ? '<div class="hint">Reserved characters ' + RESERVED_CHARS.map(function(c){return '"'+c+'"';}).join(' and ') + ' are not allowed in free-text.</div>' : '') +
         pairToggleHtml;
     }
@@ -1236,6 +1253,7 @@ function renderGeneratorFields() {
   // Set initial show/hide state based on brand type
   if (level === 'P1') onP1BrandSelectionChange();
   if (level === 'P3') onP3BrandTypeChange();
+  if (level === 'P3') onP3AssetTypeChange();
 }
 
 /** Visual feedback when a field's "Pair line-by-line" checkbox is toggled. */
@@ -1284,6 +1302,55 @@ function onP3BrandTypeChange() {
     const catDisplay = document.getElementById('gen_productCat_display');
     if (catDisplay) catDisplay.innerHTML = '<em>Not applicable — use Landing Page below.</em>';
   }
+}
+
+/**
+ * Asset Type drives whether the Organic Post URL is required: a Boosted ad is
+ * an organic post with spend behind it, so it always has a parent post. The
+ * rule itself lives on the field's `requiredWhen` in code.gs — this only
+ * reflects it in the form so the requirement is visible before Generate.
+ */
+function onP3AssetTypeChange() {
+  const card = document.querySelector('[data-field-key="organicPostUrl"]');
+  if (!card) return;
+  const selected = readMultiSelectValues('gen_assetType') || [];
+  const fld = (((TAXONOMY || {}).P3 || {}).fields || []).filter(function(f) { return f.key === 'organicPostUrl'; })[0];
+  const trigger = (fld && fld.requiredWhen ? fld.requiredWhen.equals : ['Boosted']) || [];
+  const isRequired = selected.some(function(v) {
+    return trigger.some(function(t) { return String(t).toLowerCase() === String(v).trim().toLowerCase(); });
+  });
+  card.classList.toggle('field-required-now', isRequired);
+  const note = card.querySelector('.field-note');
+  if (note) note.textContent = isRequired ? '· REQUIRED — Asset Type is Boosted' : '· optional for this Asset Type';
+}
+
+/**
+ * Resolve each pasted line server-side and report what was extracted.
+ * This runs on blur because the failure mode that matters is silent: an
+ * unsupported or wrong-namespace URL must be visible here, not discovered
+ * later as a join that quietly matches nothing.
+ */
+function checkOrganicPostUrls() {
+  const el  = document.getElementById('gen_organicPostUrl');
+  const out = document.getElementById('gen_organicPostUrl_status');
+  if (!el || !out) return;
+  const block = (el.value || '').trim();
+  if (!block) { out.innerHTML = ''; return; }
+  out.innerHTML = '<em>Checking…</em>';
+  google.script.run
+    .withSuccessHandler(function(rows) {
+      out.innerHTML = (rows || []).filter(function(r) { return r.status !== 'empty'; }).map(function(r) {
+        if (r.postId) {
+          return '<div style="color:var(--vn-ok,#2e7d32)">✓ ' + escapeHtml(r.platform || 'post') + ' → <strong>' + escapeHtml(r.postId) + '</strong>' +
+                 (r.handle ? ' <span style="opacity:.7">(handle in URL: ' + escapeHtml(r.handle) + ')</span>' : '') + '</div>';
+        }
+        return '<div style="color:var(--vn-bad,#c62828)">✕ ' + escapeHtml(r.input || '') + ' — ' + escapeHtml(r.reason || r.status) + '</div>';
+      }).join('');
+    })
+    .withFailureHandler(function(err) {
+      out.innerHTML = '<span style="color:var(--vn-bad,#c62828)">Could not check URLs: ' + escapeHtml(err && err.message ? err.message : String(err)) + '</span>';
+    })
+    .resolveOrganicPostRefs(block);
 }
 
 /**
