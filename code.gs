@@ -2959,9 +2959,23 @@ function organicNormalize_(raw) {
   };
 }
 
-/** Rule 2: keep 19-digit IDs exact. BigInt, never Number. */
-function organicBigInt_(s) {
-  try { return BigInt(String(s)); } catch (e) { return null; }
+/**
+ * Read the HIGH bits of a 64-bit decimal ID held as a string.
+ *
+ * Apps Script's V8 runtime has no BigInt — a `32n` literal is a parse error,
+ * not a runtime one, so the whole file fails to save. These checks only ever
+ * look at bits 23 and above, and a double keeps the top 53 bits of a 64-bit
+ * value exactly; the precision that is lost sits in the low ~11 bits, far
+ * below every shift taken here. So `Math.floor(n / 2^k)` is exact for the
+ * bits these validators actually test.
+ *
+ * Rule 2 is unaffected: IDs are still STORED as strings and never round-trip
+ * through a number. This only inspects them.
+ */
+function organicHighBits_(s, powerOfTwo) {
+  const n = Number(String(s));
+  if (!isFinite(n)) return null;
+  return Math.floor(n / powerOfTwo);
 }
 
 // ---- Structural validation available for free ----------------------------
@@ -2971,9 +2985,8 @@ function organicBigInt_(s) {
  *  19-digit shape. */
 function organicValidTikTok_(id) {
   if (!/^\d{6,21}$/.test(id)) return false;
-  const n = organicBigInt_(id);
-  if (n === null) return false;
-  const ts = Number(n >> 32n);
+  const ts = organicHighBits_(id, 4294967296);          // >> 32
+  if (ts === null) return false;
   return ts > 1000000000 && ts < (Math.floor(Date.now() / 1000) + 86400);
 }
 
@@ -2988,9 +3001,9 @@ function organicValidX_(id) {
 function organicValidPinterest_(id) {
   // Length is a function of shard, not age: 16-19 digits observed, not fixed.
   if (!/^\d{1,20}$/.test(id)) return false;
-  const n = organicBigInt_(id);
-  if (n === null) return false;
-  return Number((n >> 36n) & 0x3ffn) === 1;
+  const hi = organicHighBits_(id, 68719476736);         // >> 36
+  if (hi === null) return false;
+  return (hi % 1024) === 1;                             // & 0x3FF, 1 = pin
 }
 
 /** Instagram / Threads shortcode → media ID, sanity-checked against a
@@ -2998,13 +3011,16 @@ function organicValidPinterest_(id) {
  *  in by mistake. */
 function organicValidShortcode_(code) {
   if (!/^[A-Za-z0-9_-]{10,12}$/.test(code)) return false;
-  let n = 0n;
+  let n = 0;
   for (let i = 0; i < code.length; i++) {
     const idx = ORGANIC_B64.indexOf(code.charAt(i));
     if (idx === -1) return false;
-    n = n * 64n + BigInt(idx);
+    n = n * 64 + idx;
   }
-  const createdMs = Number(n >> 23n) + 1314220021721;
+  // >> 23. The accumulation rounds once n passes 2^53, but the error stays
+  // below 2^13 and is divided by 2^23 here, so the date lands well within the
+  // tolerance of a plausibility check measured in years.
+  const createdMs = Math.floor(n / 8388608) + 1314220021721;
   return createdMs > 1314220021721 && createdMs < (Date.now() + 86400000);
 }
 

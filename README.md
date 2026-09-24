@@ -64,6 +64,15 @@ Don't leave the folder parked on a feature branch after that branch merges. A me
 | `appsscript.json` | Apps Script project manifest |
 | `tests/taxonomy.test.js` | Offline regression suite — `node tests/taxonomy.test.js` |
 
+## Apps Script is not Node
+
+`code.gs` runs on Apps Script's V8, which **has no BigInt** and rejects a few
+other things Node accepts. These fail at *parse* time, so the whole file refuses
+to save — `node --check` passing proves nothing. The test suite ends with a
+compatibility lint over `code.gs` covering BigInt literals and constructors,
+`?.`, `??`, `replaceAll`, `Object.fromEntries`, `flatMap`, and negative `.at()`.
+Run the suite before pasting into the editor.
+
 ## Organic Post ID in the P3 ad name
 
 A P3 name carries the organic post its creative came from **inside the Influencer
