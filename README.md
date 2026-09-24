@@ -96,6 +96,11 @@ repo. Two consequences worth knowing:
   identifiers, and TikTok Shop product IDs and Reddit comment IDs are the same
   shape as post IDs from other namespaces. These fail loudly rather than emitting
   a key that would join to the wrong thing, or to nothing.
+- **LinkedIn keys are typed**, e.g. `activity:7333162625675038720` or
+  `ugcPost:7492642684633968640`. LinkedIn runs three post namespaces and an
+  activity ID is a *different number* from its content ID for the same post, so
+  storing bare digits would silently merge two different posts. Every other
+  platform emits a bare ID.
 
 **Required when Asset Type is `Boosted`** — a boosted ad is an organic post with
 spend behind it, so it always has a parent post. The rule is declared once, on the
