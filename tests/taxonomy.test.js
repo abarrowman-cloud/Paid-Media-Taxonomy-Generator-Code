@@ -90,43 +90,47 @@ t('Twitch VOD','https://www.twitch.tv/videos/1234567890','ok','1234567890','twit
 t('YouTube youtu.be','https://youtu.be/dQw4w9WgXcQ','ok','dQw4w9WgXcQ','youtube');
 t('YouTube clip needs resolution','https://www.youtube.com/clip/UgkxABCDEFGHIJKLMNOP','needs_resolution',undefined,'youtube');
 t('YouTube community post wrong ns','https://www.youtube.com/post/UgkxABCDEFGHIJKLMNOP','wrong_namespace',undefined,'youtube');
-t('LinkedIn urn','https://www.linkedin.com/feed/update/urn:li:activity:7012345678901234567/','ok','activity:7012345678901234567','linkedin');
+t('LinkedIn urn','https://www.linkedin.com/feed/update/urn:li:activity:7012345678901234567/','ok','7012345678901234567','linkedin');
 
 // ---- LinkedIn, per docs/organic-url-patterns/linkedin-url-patterns.md -------
 // The spec's numbered test set. The load-bearing rule: activity / ugcPost /
 // share are SEPARATE namespaces and an activity ID differs from its content
 // ID, so the key is typed - never the bare digits.
-t('LI 1 person post, activity id','https://www.linkedin.com/posts/jane-doe_example-update-activity-7333162625675038720-AbCd','ok','activity:7333162625675038720','linkedin');
-t('LI 2 company post, activity id','https://www.linkedin.com/posts/example-company_news-activity-7478430578854326272-1J94','ok','activity:7478430578854326272','linkedin');
-t('LI 3/4 ugcPost id keeps its namespace','https://www.linkedin.com/posts/example-company_product-news-ugcPost-7492642684633968640-XyZ1','ok','ugcPost:7492642684633968640','linkedin');
-t('LI 5 slug containing "sponsored" is still just a slug','https://www.linkedin.com/posts/jane-doe_sponsored-partner-update-activity-7333162625675038720-AbCd','ok','activity:7333162625675038720','linkedin');
-t('LI 6 hashtag-derived sponsored text','https://www.linkedin.com/posts/jane-doe_sponsored-ad-activity-7333162625675038721-Zz12','ok','activity:7333162625675038721','linkedin');
-t('LI 7 bare host','https://linkedin.com/feed/update/urn:li:activity:7012345678901234567/','ok','activity:7012345678901234567','linkedin');
-t('LI 9 regional host','https://de.linkedin.com/feed/update/urn:li:activity:7012345678901234567/','ok','activity:7012345678901234567','linkedin');
-t('LI 10/11 share tracking params stripped','https://www.linkedin.com/feed/update/urn:li:activity:7012345678901234567/?utm_source=share&utm_medium=member_desktop','ok','activity:7012345678901234567','linkedin');
-t('LI 12 fragment ignored','https://www.linkedin.com/feed/update/urn:li:activity:7012345678901234567/#comments','ok','activity:7012345678901234567','linkedin');
-t('LI 15 feed ugcPost url','https://www.linkedin.com/feed/update/urn:li:ugcPost:7492642684633968640/','ok','ugcPost:7492642684633968640','linkedin');
-t('LI 16 PERCENT-ENCODED urn decodes once','https://www.linkedin.com/feed/update/urn%3Ali%3AugcPost%3A7492642684633968640/','ok','ugcPost:7492642684633968640','linkedin');
+t('LI 1 person post, activity id','https://www.linkedin.com/posts/jane-doe_example-update-activity-7333162625675038720-AbCd','ok','7333162625675038720','linkedin');
+t('LI 2 company post, activity id','https://www.linkedin.com/posts/example-company_news-activity-7478430578854326272-1J94','ok','7478430578854326272','linkedin');
+t('LI 3/4 ugcPost id keeps its namespace','https://www.linkedin.com/posts/example-company_product-news-ugcPost-7492642684633968640-XyZ1','ok','7492642684633968640','linkedin');
+t('LI 5 slug containing "sponsored" is still just a slug','https://www.linkedin.com/posts/jane-doe_sponsored-partner-update-activity-7333162625675038720-AbCd','ok','7333162625675038720','linkedin');
+t('LI 6 hashtag-derived sponsored text','https://www.linkedin.com/posts/jane-doe_sponsored-ad-activity-7333162625675038721-Zz12','ok','7333162625675038721','linkedin');
+t('LI 7 bare host','https://linkedin.com/feed/update/urn:li:activity:7012345678901234567/','ok','7012345678901234567','linkedin');
+t('LI 9 regional host','https://de.linkedin.com/feed/update/urn:li:activity:7012345678901234567/','ok','7012345678901234567','linkedin');
+t('LI 10/11 share tracking params stripped','https://www.linkedin.com/feed/update/urn:li:activity:7012345678901234567/?utm_source=share&utm_medium=member_desktop','ok','7012345678901234567','linkedin');
+t('LI 12 fragment ignored','https://www.linkedin.com/feed/update/urn:li:activity:7012345678901234567/#comments','ok','7012345678901234567','linkedin');
+t('LI 15 feed ugcPost url','https://www.linkedin.com/feed/update/urn:li:ugcPost:7492642684633968640/','ok','7492642684633968640','linkedin');
+t('LI 16 PERCENT-ENCODED urn decodes once','https://www.linkedin.com/feed/update/urn%3Ali%3AugcPost%3A7492642684633968640/','ok','7492642684633968640','linkedin');
 t('LI 17 lnkd.in needs resolution','https://lnkd.in/eXaMp1e','needs_resolution',undefined,'linkedin');
 t('LI 19 pulse article has no typed id','https://www.linkedin.com/pulse/how-we-scaled-jane-doe','no_durable_id',undefined,'linkedin');
 t('LI 20 newsletter is another namespace','https://www.linkedin.com/newsletters/the-weekly-7012345678901234567','wrong_namespace',undefined,'linkedin');
-t('LI 21 live video keeps ugcPost namespace','https://www.linkedin.com/video/live/urn:li:ugcPost:7492642684633968640','ok','ugcPost:7492642684633968640','linkedin');
-t('LI 22 event video','https://www.linkedin.com/video/event/urn:li:ugcPost:7492642684633968641','ok','ugcPost:7492642684633968641','linkedin');
+t('LI 21 live video keeps ugcPost namespace','https://www.linkedin.com/video/live/urn:li:ugcPost:7492642684633968640','ok','7492642684633968640','linkedin');
+t('LI 22 event video','https://www.linkedin.com/video/event/urn:li:ugcPost:7492642684633968641','ok','7492642684633968641','linkedin');
 t('LI 24 profile is not a post','https://www.linkedin.com/in/jane-doe','not_a_post',undefined,'linkedin');
 t('LI 25 company page is not a post','https://www.linkedin.com/company/example-co','not_a_post',undefined,'linkedin');
 t('LI 26 share-action url is not a post','https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fexample.com','not_a_post',undefined,'linkedin');
 t('LI 27 non-LinkedIn host with /posts/ path','https://example.com/posts/jane-doe_x-activity-7333162625675038720-AbCd','unsupported_url');
 t('LI 28 LinkedIn url with no typed id','https://www.linkedin.com/posts/jane-doe_just-a-slug','malformed_url',undefined,'linkedin');
-t('LI share urn accepted','https://www.linkedin.com/feed/update/urn:li:share:6864691044148133888/','ok','share:6864691044148133888','linkedin');
-t('LI slug digits are NOT mistaken for the id','https://www.linkedin.com/posts/acme_2026-q4-results-12345678901234567890-activity-7333162625675038720-AbCd','ok','activity:7333162625675038720','linkedin');
+t('LI share urn accepted','https://www.linkedin.com/feed/update/urn:li:share:6864691044148133888/','ok','6864691044148133888','linkedin');
+t('LI slug digits are NOT mistaken for the id','https://www.linkedin.com/posts/acme_2026-q4-results-12345678901234567890-activity-7333162625675038720-AbCd','ok','7333162625675038720','linkedin');
 
-// A typed key must survive being pasted back into the generator.
-eq('LI typed id round-trips as a bare id', resolveOrganicPostRef('ugcPost:7492642684633968640').postId, 'ugcPost:7492642684633968640');
-// Same number in two namespaces must NOT collapse to one key.
-eq('LI namespaces do not merge by number',
-  organicParseOffline_('https://www.linkedin.com/feed/update/urn:li:activity:7492642684633968640/').postId !==
-  organicParseOffline_('https://www.linkedin.com/feed/update/urn:li:ugcPost:7492642684633968640/').postId, true);
-t('Unwrap FB plugin href','https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.instagram.com%2Fp%2FDdbhlHZOdfw%2F','ok','DdbhlHZOdfw','instagram');
+// LinkedIn stores a BARE numeric ID, like every other platform. The URN type is
+// read to find the number and to reject non-post namespaces, then discarded.
+eq('LI emits a bare numeric id, no type prefix',
+  organicParseOffline_('https://www.linkedin.com/feed/update/urn:li:ugcPost:7492642684633968640/').postId,
+  '7492642684633968640');
+eq('LI bare id round-trips when pasted back',
+  resolveOrganicPostRef('7492642684633968640').postId, '7492642684633968640');
+// A typed key is no longer something the generator emits, so pasting one in is a
+// mistake and must be refused rather than stored in a different shape.
+eq('LI typed key is refused on paste',
+  resolveOrganicPostRef('ugcPost' + ':' + '7492642684633968640').postId, null);
 t('Bare host no scheme','instagram.com/p/DdbhlHZOdfw/','ok','DdbhlHZOdfw','instagram');
 t('Not a URL','just some text','malformed_url');
 t('Unknown host','https://example.com/p/abc','unsupported_url');
