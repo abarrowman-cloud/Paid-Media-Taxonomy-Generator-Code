@@ -3249,18 +3249,12 @@ function organicMatchFacebook_(u) {
   return organicResult_({ status: ORGANIC_STATUS.UNSUPPORTED, platform: 'facebook', reason: 'Unrecognised Facebook URL' });
 }
 
-/** Canonical casing for the three LinkedIn URN namespaces. */
-function organicLinkedInType_(raw) {
-  const t = String(raw || '').toLowerCase();
-  return t === 'activity' ? 'activity' : t === 'ugcpost' ? 'ugcPost' : t === 'share' ? 'share' : null;
-}
-
 /**
- * LinkedIn keeps THREE post namespaces — activity, ugcPost and share — and an
- * activity ID and its content ID are different numbers for the same post. The
- * spec is explicit: do not merge the namespaces by number. So the key emitted
- * here is the typed form "{type}:{id}", never the bare digits, which would
- * silently collapse two different posts that happen to share a number.
+ * LinkedIn URLs carry one of three URN types — activity, ugcPost and share.
+ * The type is read to locate the number and to reject non-post namespaces, but
+ * it is NOT emitted: every platform in this taxonomy stores a bare post ID, and
+ * LinkedIn is not an exception to that. The row's own `platform` column
+ * qualifies the ID downstream.
  */
 function organicMatchLinkedIn_(u) {
   const s = u.segs;
@@ -3277,10 +3271,9 @@ function organicMatchLinkedIn_(u) {
   // Typed URN anywhere in the path: /feed/update/, /video/live/, /video/event/.
   const urn = dec.match(/urn:li:(activity|ugcPost|share):(\d+)/i);
   if (urn) {
-    const type = organicLinkedInType_(urn[1]);
     const surface = (s[0] === 'video' && s[1] === 'live') ? 'live'
                   : (s[0] === 'video') ? 'video' : 'post';
-    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'linkedin', postId: type + ':' + urn[2], surfaceType: surface });
+    return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'linkedin', postId: urn[2], surfaceType: surface });
   }
 
   // Readable permalink: /posts/{slug}-{type}-{id}-{shareCode}. Anchor on the
@@ -3289,7 +3282,7 @@ function organicMatchLinkedIn_(u) {
   if (s[0] === 'posts' && s.length >= 2) {
     const m = decodeURIComponent(s[1]).match(/-(activity|ugcPost)-(\d+)/i);
     if (m) {
-      return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'linkedin', postId: organicLinkedInType_(m[1]) + ':' + m[2], surfaceType: 'post' });
+      return organicResult_({ status: ORGANIC_STATUS.OK, platform: 'linkedin', postId: m[2], surfaceType: 'post' });
     }
     return organicResult_({ status: ORGANIC_STATUS.MALFORMED, platform: 'linkedin', reason: 'LinkedIn /posts/ URL carries no typed activity or ugcPost ID' });
   }
@@ -3456,8 +3449,7 @@ function resolveOrganicPostRef(raw) {
   // A bare ID pasted straight in is accepted as-is: the taxonomy stores the ID,
   // not the URL, so re-pasting a generated value must round-trip.
   if (!/[\/\s]/.test(s) && !/^https?:/i.test(s)) {
-    // ':' is allowed because LinkedIn keys are typed ("ugcPost:7492...").
-    if (/^[A-Za-z0-9_:-]{5,80}$/.test(s)) return { postId: s, handle: null, status: ORGANIC_STATUS.OK, reason: 'Accepted as a post ID', platform: null };
+    if (/^[A-Za-z0-9_-]{5,80}$/.test(s)) return { postId: s, handle: null, status: ORGANIC_STATUS.OK, reason: 'Accepted as a post ID', platform: null };
     return { postId: null, handle: null, status: ORGANIC_STATUS.MALFORMED, reason: '"' + s + '" is neither a URL nor a valid post ID', platform: null };
   }
   const r = parseOrganicPostUrl(s);
