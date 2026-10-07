@@ -543,6 +543,7 @@
     margin-bottom: 6px;
     background: var(--vn-white);
   }
+  .url-list-row.no-platform { grid-template-columns: 30px 1fr 30px; }
   .url-list-row .url-row-num {
     font-weight: 600;
     color: var(--vn-muted);
@@ -912,7 +913,8 @@
 <div class="panel" id="panel-url">
   <h3>UTM Builder — Append UTM Parameters</h3>
   <div class="hint" style="margin-bottom:10px;">
-    Generate a UTM-tagged destination URL. Product brands (Conair / BaBylissPRO / Cuisinart) use platform-specific fixed templates with dynamic ad-platform tokens. Unique Vacations Inc. uses a lowercase composite campaign built from 10 fields.
+    Generate a UTM-tagged destination URL. Product brands (Conair / BaBylissPRO / Cuisinart) use platform-specific fixed templates with dynamic ad-platform tokens. Unique Vacations Inc. uses a lowercase composite campaign built from 10 fields. NCA uses one fixed UTM string on every URL (no platform pick).
+    The destination URL is kept exactly as pasted — its case is never changed.
     Every generated URL is also checked for liveness — a red <span class="fail">DEAD</span> flag means the destination didn't respond.
   </div>
 
@@ -3053,6 +3055,12 @@ function populateUrlBrandPicker() {
     brands.map(function(b) { return '<option value="' + escapeAttr(b) + '">' + escapeHtml(b) + '</option>'; }).join('');
 }
 
+/** True when the brand uses one fixed UTM string for every URL (e.g. NCA). */
+function isFixedTemplateBrand_(brand) {
+  const t = (URL_BUILDER && URL_BUILDER.brandTemplates) || {};
+  return Object.prototype.hasOwnProperty.call(t, brand);
+}
+
 function onUrlBrandChange() {
   const brand = (document.getElementById('url_brand') || {}).value || '';
   const host  = document.getElementById('url-fields-host');
@@ -3069,13 +3077,16 @@ function onUrlBrandChange() {
   if (brand === 'Unique Vacations Inc.') {
     if (hint) hint.textContent = 'Composite campaign build — lowercase, special chars stripped, joined with "_".';
     host.innerHTML = renderUrlUtcFields_();
+  } else if (isFixedTemplateBrand_(brand)) {
+    if (hint) hint.textContent = 'Fixed brand template — every URL gets: ' + String(URL_BUILDER.brandTemplates[brand]).replace(/^\?/, '');
+    host.innerHTML = renderUrlPlatformFields_(true);
   } else {
     if (hint) hint.textContent = 'Platform-driven fixed template. Dynamic tokens are filled by the ad platform at serve time.';
     host.innerHTML = renderUrlPlatformFields_();
   }
 }
 
-function renderUrlPlatformFields_() {
+function renderUrlPlatformFields_(fixedTemplate) {
   const platforms = Object.keys(URL_BUILDER.platformTemplates || {});
   const opts = ['<option value="">— pick a platform —</option>']
     .concat(platforms.map(function(p) { return '<option value="' + escapeAttr(p) + '">' + escapeHtml(p) + '</option>'; }))
@@ -3087,31 +3098,35 @@ function renderUrlPlatformFields_() {
         '<div class="field-header"><span class="field-num">★</span><span class="field-label">Mode</span></div>' +
         '<label style="margin-right:14px;"><input type="radio" name="url-mode" value="single" checked onchange="onUrlModeChange()"> Single URL</label>' +
         '<label><input type="radio" name="url-mode" value="bulk" onchange="onUrlModeChange()"> Bulk URLs</label>' +
-        '<div class="hint" style="margin-top:6px;">Bulk mode lets you paste multiple destination URLs. Pick a platform to apply to all of them, then override individual rows after build if needed.</div>' +
+        '<div class="hint" style="margin-top:6px;">' + (fixedTemplate
+          ? 'Bulk mode lets you paste multiple destination URLs. The same fixed UTM string is applied to all of them.'
+          : 'Bulk mode lets you paste multiple destination URLs. Pick a platform to apply to all of them, then override individual rows after build if needed.') + '</div>' +
       '</div>' +
     '</div>' +
 
     // Single URL block
     '<div id="url-mode-single">' +
       '<div class="field-grid">' +
-        '<div class="field-cell dbl">' +
+        '<div class="field-cell ' + (fixedTemplate ? 'wide' : 'dbl') + '">' +
           '<div class="field-header"><span class="field-num">1</span><span class="field-label">Destination URL <span class="field-note">(http:// or https://, no query string)</span></span></div>' +
           '<input type="url" id="url_destinationUrl" placeholder="https://www.cuisinart.com/.../DGB-30.html">' +
         '</div>' +
+        (fixedTemplate ? '' :
         '<div class="field-cell">' +
           '<div class="field-header"><span class="field-num">2</span><span class="field-label">Platform</span></div>' +
           '<select id="url_platform">' + opts + '</select>' +
-        '</div>' +
+        '</div>') +
       '</div>' +
     '</div>' +
 
     // Bulk URL block
     '<div id="url-mode-bulk" style="display:none;">' +
       '<div class="field-grid">' +
+        (fixedTemplate ? '' :
         '<div class="field-cell wide">' +
           '<div class="field-header"><span class="field-num">1</span><span class="field-label">Apply this Platform to All URLs <span class="field-note">(can be overridden per-row before building)</span></span></div>' +
           '<select id="url_bulk_platform" onchange="onBulkPlatformChange()">' + opts + '</select>' +
-        '</div>' +
+        '</div>') +
         '<div class="field-cell wide">' +
           '<div class="field-header"><span class="field-num">2</span><span class="field-label">Destination URLs <span class="field-note">(paste one per line, http:// or https://, no query string)</span></span></div>' +
           '<textarea id="url_bulk_input" style="min-height:110px; font-family: \'JetBrains Mono\', \'SF Mono\', Consolas, monospace; font-size:12px;" placeholder="https://www.cuisinart.com/chefs-classic-stainless-skillet-fp22-24/CSS-22.html&#10;https://www.cuisinart.com/chefs-classic-3-quart-saucepan/74-193P1.html&#10;https://www.babylisspro.com/curling-irons/babnt125tuc.html"></textarea>' +
@@ -3121,7 +3136,7 @@ function renderUrlPlatformFields_() {
           '</div>' +
         '</div>' +
         '<div class="field-cell wide">' +
-          '<div class="field-header"><span class="field-num">3</span><span class="field-label">URL List <span class="field-note">(per-row platform override available)</span></span></div>' +
+          '<div class="field-header"><span class="field-num">3</span><span class="field-label">URL List' + (fixedTemplate ? '' : ' <span class="field-note">(per-row platform override available)</span>') + '</span></div>' +
           '<div id="url-list-host" class="url-list-wrap"></div>' +
           '<button type="button" class="btn secondary" onclick="addBulkUrlRow()" style="margin-top:6px;">+ Add URL row</button>' +
         '</div>' +
@@ -3176,6 +3191,7 @@ function renderBulkUrlList_() {
     host.innerHTML = '<div class="hint" style="padding:10px;">No URLs loaded yet. Paste URLs above and click "Load URLs into editable list", or click "+ Add URL row".</div>';
     return;
   }
+  const fixedTemplate = isFixedTemplateBrand_((document.getElementById('url_brand') || {}).value || '');
   const platforms = Object.keys((URL_BUILDER && URL_BUILDER.platformTemplates) || {});
   const optsFor = function(sel) {
     return ['<option value="">— pick a platform —</option>']
@@ -3184,10 +3200,10 @@ function renderBulkUrlList_() {
       })).join('');
   };
   host.innerHTML = URL_BULK_ROWS.map(function(r, i) {
-    return '<div class="url-list-row">' +
+    return '<div class="url-list-row' + (fixedTemplate ? ' no-platform' : '') + '">' +
              '<div class="url-row-num">' + (i + 1) + '</div>' +
              '<input type="url" value="' + escapeAttr(r.url) + '" placeholder="https://..." oninput="updateBulkUrlRow(' + i + ', this.value)">' +
-             '<select onchange="updateBulkUrlPlatform(' + i + ', this.value)">' + optsFor(r.platform || '') + '</select>' +
+             (fixedTemplate ? '' : '<select onchange="updateBulkUrlPlatform(' + i + ', this.value)">' + optsFor(r.platform || '') + '</select>') +
              '<button type="button" class="url-row-remove" title="Remove" onclick="removeBulkUrlRow(' + i + ')">×</button>' +
            '</div>';
   }).join('');
@@ -3333,7 +3349,7 @@ function runUrlBuild() {
     });
     const missingUrl = inputs.find(function(x) { return !x.destinationUrl; });
     if (missingUrl) { setStatus('url-status', '<span class="fail">One or more rows have no Destination URL.</span>'); return; }
-    const missingPlat = inputs.find(function(x) { return !x.platform; });
+    const missingPlat = !isFixedTemplateBrand_(brand) && inputs.find(function(x) { return !x.platform; });
     if (missingPlat) { setStatus('url-status', '<span class="fail">One or more rows have no Platform — set the global platform above or pick per-row.</span>'); return; }
   } else {
     const input = readUrlBuilderInput_();
@@ -3667,6 +3683,9 @@ function onUrlQABrandChange() {
   if (brand === 'Unique Vacations Inc.') {
     if (platWrap) platWrap.style.display = 'none';
     if (utcHint)  utcHint.style.display = '';
+  } else if (isFixedTemplateBrand_(brand)) {
+    if (platWrap) platWrap.style.display = 'none';
+    if (utcHint)  utcHint.style.display = 'none';
   } else {
     if (platWrap) platWrap.style.display = '';
     if (utcHint)  utcHint.style.display = 'none';
@@ -3683,6 +3702,8 @@ function runUrlQA() {
   let validatorLabel   = '';
   if (brand === 'Unique Vacations Inc.') {
     validatorLabel = 'Unique Vacations Inc. composite-campaign template';
+  } else if (isFixedTemplateBrand_(brand)) {
+    validatorLabel = brand + ' fixed template';
   } else {
     expectedPlatform = (document.getElementById('url-qa-platform') || {}).value || '';
     if (!expectedPlatform) {

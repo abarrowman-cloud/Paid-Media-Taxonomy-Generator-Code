@@ -199,6 +199,33 @@ eq('validator flags missing post URL on Boosted', vIssues.filter(i=>i.field==='o
 eq('validator quiet when supplied', validateValues('P3', Object.assign({}, base, {assetType:'Boosted', organicPostUrl:'https://www.instagram.com/p/DdbhlHZOdfw/'})).filter(i=>i.field==='organicPostUrl').length, 0);
 
 // =====================================================================
+// D. UTM Builder — NCA fixed brand template + destination case preservation
+//
+// An older tool lowercased whole URLs and broke case-sensitive paths. The
+// destination must come back byte-for-byte; only the appended UTM string is
+// ours. Checked for every brand, not just NCA.
+// =====================================================================
+const MIXED = 'https://www.Example.com/Shop/Product-ABC123/Item.HTML';
+const nca = buildUtmUrl({ brand: 'NCA', destinationUrl: MIXED });
+eq('NCA full URL', nca.fullUrl, MIXED + '?utm_source=social&utm_medium=social&utm_campaign=creator');
+eq('NCA utm string', nca.utmString, '?utm_source=social&utm_medium=social&utm_campaign=creator');
+eq('NCA breakout source', nca.breakout.source, 'social');
+eq('NCA breakout medium', nca.breakout.medium, 'social');
+eq('NCA breakout campaign', nca.breakout.campaign, 'creator');
+eq('NCA ignores any platform passed', buildUtmUrl({ brand: 'NCA', destinationUrl: MIXED, platform: 'Meta' }).utmString, nca.utmString);
+
+eq('case kept: product brand', buildUtmUrl({ brand: 'Cuisinart', destinationUrl: MIXED, platform: 'Meta' }).fullUrl.indexOf(MIXED + '?'), 0);
+eq('case kept: UTC brand', buildUtmUrl({ brand: 'Unique Vacations Inc.', destinationUrl: MIXED, source: 'facebook', objective: 'Awareness',
+  campaign: 'Q1', geo: 'usa', influencer: 'X', hotel: 'SSV', creativeType: 'video', assetVersion: '1', adId: '123' }).fullUrl.indexOf(MIXED + '?'), 0);
+
+const ncaQa = qaUtmUrls([nca.fullUrl, MIXED + '?utm_source=meta&utm_medium=social&utm_campaign=creator', MIXED + '?utm_source=social&utm_medium=social&utm_campaign=creator&utm_content=1'], 'NCA', '');
+eq('NCA QA pass', ncaQa[0].status, 'PASS');
+eq('NCA QA wrong source fails', ncaQa[1].status, 'FAIL');
+eq('NCA QA wrong source names brand', ncaQa[1].issues.join(' ').indexOf('the NCA QA') !== -1, true);
+eq('NCA QA extra param fails', ncaQa[2].status, 'FAIL');
+eq('Meta QA rejects NCA URL', qaUtmUrls([nca.fullUrl], 'Cuisinart', 'Meta')[0].status, 'FAIL');
+
+// =====================================================================
 // C. Apps Script runtime compatibility
 //
 // code.gs runs on Apps Script's V8, NOT on Node. Node accepts syntax that

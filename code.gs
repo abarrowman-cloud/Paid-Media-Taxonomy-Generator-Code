@@ -1329,6 +1329,7 @@ function getTaxonomyWithSource() {
     urlBuilder: {
       supportedBrands:       URL_BUILDER_SUPPORTED_BRANDS,
       platformTemplates:     URL_BUILDER_PLATFORM_TEMPLATES,
+      brandTemplates:        URL_BUILDER_BRAND_TEMPLATES,
       platformInstructions:  URL_BUILDER_PLATFORM_INSTRUCTIONS,
       sourceToPlatform:      URL_BUILDER_SOURCE_TO_PLATFORM,
       utc:                   URL_BUILDER_UTC_CONFIG,
@@ -2077,7 +2078,17 @@ function ensureProductsTabsPerBrand() {
 // =========================================================================
 
 /** Brands supported by the URL Builder. Other brands won't show up in the tab. */
-const URL_BUILDER_SUPPORTED_BRANDS = ['Conair', 'BaBylissPRO', 'Cuisinart', 'Unique Vacations Inc.'];
+const URL_BUILDER_SUPPORTED_BRANDS = ['Conair', 'BaBylissPRO', 'Cuisinart', 'Unique Vacations Inc.', 'NCA'];
+
+/**
+ * Brand-level fixed UTM templates. A brand listed here gets the same UTM
+ * string on every URL regardless of platform — no platform pick, no inputs
+ * beyond the destination URL. Values are literals (no dynamic tokens).
+ * The destination URL is appended to verbatim; its case is never changed.
+ */
+const URL_BUILDER_BRAND_TEMPLATES = {
+  'NCA': '?utm_source=social&utm_medium=social&utm_campaign=creator'
+};
 
 /**
  * Platform-driven UTM templates. Used by Conair / BaBylissPRO / Cuisinart.
@@ -2206,8 +2217,13 @@ function buildUtmUrl(params) {
 
   let utmString;
   const breakout = { source: '', medium: '', campaign: '', term: '', content: '' };
+  const brandTemplate = URL_BUILDER_BRAND_TEMPLATES[brand];
 
-  if (brand === 'Unique Vacations Inc.') {
+  if (brandTemplate) {
+    // Brand-level fixed template (e.g. NCA) — no platform, no inputs.
+    utmString = brandTemplate;
+    urlBuilderParseBreakout_(brandTemplate, breakout);
+  } else if (brand === 'Unique Vacations Inc.') {
     // Hard-block URL-structural and taxonomy-reserved characters in free-text
     // fields BEFORE sanitization. Fields like Campaign Name / Influencer /
     // Asset Version / Ad ID are user-entered and must not carry chars that
@@ -2263,22 +2279,25 @@ function buildUtmUrl(params) {
     const template = URL_BUILDER_PLATFORM_TEMPLATES[platformKey];
     if (!template) throw new Error('Platform "' + platformKey + '" is not supported. Supported: ' + Object.keys(URL_BUILDER_PLATFORM_TEMPLATES).join(', '));
     utmString = template;
-
-    // Parse breakout from the template
-    template.replace(/^\?/, '').split('&').forEach(function(kv) {
-      const idx = kv.indexOf('=');
-      if (idx === -1) return;
-      const key = kv.slice(0, idx);
-      const val = kv.slice(idx + 1);
-      if (key === 'utm_source')   breakout.source   = val;
-      if (key === 'utm_medium')   breakout.medium   = val;
-      if (key === 'utm_campaign') breakout.campaign = val;
-      if (key === 'utm_term')     breakout.term     = val;
-      if (key === 'utm_content')  breakout.content  = val;
-    });
+    urlBuilderParseBreakout_(template, breakout);
   }
 
   return { fullUrl: destUrl + utmString, utmString: utmString, breakout: breakout };
+}
+
+/** Fill a breakout object from a "?k=v&k=v" UTM template. */
+function urlBuilderParseBreakout_(template, breakout) {
+  template.replace(/^\?/, '').split('&').forEach(function(kv) {
+    const idx = kv.indexOf('=');
+    if (idx === -1) return;
+    const key = kv.slice(0, idx);
+    const val = kv.slice(idx + 1);
+    if (key === 'utm_source')   breakout.source   = val;
+    if (key === 'utm_medium')   breakout.medium   = val;
+    if (key === 'utm_campaign') breakout.campaign = val;
+    if (key === 'utm_term')     breakout.term     = val;
+    if (key === 'utm_content')  breakout.content  = val;
+  });
 }
 
 /**
@@ -2482,7 +2501,11 @@ function parseUtmParams_(url) {
 
 /** Pull expected key/value pairs from a template for a given platform. */
 function templateExpectedParams_(platform) {
-  const tpl = URL_BUILDER_PLATFORM_TEMPLATES[platform];
+  return templateStringParams_(URL_BUILDER_PLATFORM_TEMPLATES[platform]);
+}
+
+/** Pull expected key/value pairs from a raw "?k=v&k=v" template string. */
+function templateStringParams_(tpl) {
   if (!tpl) return null;
   const expected = {};
   tpl.replace(/^\?/, '').split('&').forEach(function(pair) {
@@ -2617,10 +2640,14 @@ function qaUtmUrls(urls, brand, expectedPlatform) {
     throw new Error('Brand "' + brandKey + '" is not supported by URL QA. Supported: ' + URL_BUILDER_SUPPORTED_BRANDS.join(', '));
   }
   const isUtc = (brandKey === 'Unique Vacations Inc.');
+  const brandTemplate = URL_BUILDER_BRAND_TEMPLATES[brandKey];
 
   let platformKey = '';
   let expected = null;
-  if (!isUtc) {
+  if (brandTemplate) {
+    // Brand-level fixed template (e.g. NCA) — no platform pick.
+    expected = templateStringParams_(brandTemplate);
+  } else if (!isUtc) {
     platformKey = String(expectedPlatform || '').trim();
     if (!platformKey) {
       throw new Error('Pick a platform — product brands (' + brandKey + ') use platform-driven UTM templates.');
@@ -2633,6 +2660,7 @@ function qaUtmUrls(urls, brand, expectedPlatform) {
   // Reverse-lookup the expected utm_source values that match this platform
   // (TikTok Smart+ and TikTok Standard both have utm_source=tiktok).
   const expectedSource = (expected && expected.utm_source) || '';
+  const qaLabel = platformKey || brandKey;
 
   (urls || []).forEach(function(rawUrl) {
     const url = String(rawUrl || '').trim();
@@ -2688,7 +2716,7 @@ function qaUtmUrls(urls, brand, expectedPlatform) {
       // If the source is in the UTC list, that's a brand mistake, not a platform mistake
       if (URL_BUILDER_UTC_CONFIG.sourceOptions.indexOf(actualSrc) !== -1) {
         issues.push(
-          'utm_source = "' + params.utm_source + '" — looks like a Unique Vacations Inc. URL pasted into the ' + platformKey + ' QA. ' +
+          'utm_source = "' + params.utm_source + '" — looks like a Unique Vacations Inc. URL pasted into the ' + qaLabel + ' QA. ' +
           'Expected utm_source = "' + expectedSource + '". Switch to the Unique Vacations Inc. brand if you meant to QA Unique Vacations Inc. URLs.'
         );
       } else {
@@ -2696,7 +2724,7 @@ function qaUtmUrls(urls, brand, expectedPlatform) {
         const detectedPlatformLabel = detectedCandidates.length ? detectedCandidates.join(' or ') : 'unknown';
         issues.push(
           'utm_source = "' + params.utm_source + '" — looks like a ' + detectedPlatformLabel +
-          ' URL pasted into the ' + platformKey + ' QA. Expected utm_source = "' + expectedSource + '".'
+          ' URL pasted into the ' + qaLabel + ' QA. Expected utm_source = "' + expectedSource + '".'
         );
       }
     }
@@ -2735,7 +2763,7 @@ function qaUtmUrls(urls, brand, expectedPlatform) {
       // Flag unexpected utm_* params
       ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k) {
         if (!expected[k] && found[k]) {
-          issues.push('Unexpected parameter "' + k + '" = "' + found[k] + '" — not in the ' + platformKey + ' template');
+          issues.push('Unexpected parameter "' + k + '" = "' + found[k] + '" — not in the ' + qaLabel + ' template');
         }
       });
     }
