@@ -370,6 +370,27 @@ TOOLS.forEach(function (tool) {
 eq('no all-in-one Clear left', /onclick="(clearGenerator|resetExtractor|clearBulk|clearQA|clearUrlBuilder|clearUrlQA)\(\)"/.test(ui), false);
 
 // =====================================================================
+// I. UTM Builder results: Original URL | UTM String | Full URL
+//
+// Columns A-C in that order, in the table, the CSV and the Sheet export.
+// Instructions name the column to copy by letter, so the letters must follow.
+// =====================================================================
+eq('original URL = destination as entered', nca.originalUrl, MIXED);
+eq('original + UTM string = full URL', nca.originalUrl + nca.utmString, nca.fullUrl);
+eq('runUrlBuilder passes originalUrl', runUrlBuilder([{ brand: 'NCA', destinationUrl: MIXED }]).results[0].originalUrl, MIXED);
+eq('result columns A-C', URL_BUILDER_RESULT_COLUMNS.join(' | '), 'Original URL | UTM String | Full URL (Original URL + UTM String)');
+Object.keys(URL_BUILDER_PLATFORM_INSTRUCTIONS).forEach(function(p) {
+  const inst = URL_BUILDER_PLATFORM_INSTRUCTIONS[p];
+  const letter = URL_BUILDER_COLUMN_LETTERS[inst.column];
+  eq(p + ' instruction column has a letter', !!letter, true);
+  eq(p + ' instruction text cites column ' + letter, /column ([A-Z])/.test(inst.short) && inst.short.match(/column ([A-Z])/)[1], letter);
+  eq(p + ' full text cites column ' + letter, inst.full.match(/column ([A-Z])/)[1], letter);
+});
+const html_ = require('fs').readFileSync(require('path').join(__dirname, '..', 'Index.html'), 'utf8');
+eq('table renders Original, UTM, Full in order',
+  /originalUrl[\s\S]{0,120}stripLeadingQ\(r\.utmString\)[\s\S]{0,80}r\.fullUrl/.test(html_), true);
+
+// =====================================================================
 // C. Apps Script runtime compatibility
 //
 // code.gs runs on Apps Script's V8, NOT on Node. Node accepts syntax that
