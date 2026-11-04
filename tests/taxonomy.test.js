@@ -274,6 +274,45 @@ const uviQa = qaUtmUrls(uviQaCases.map((c) => c[1]), 'Unique Vacations Inc.', ''
 uviQaCases.forEach((c, k) => eq('UVI QA ' + c[0], uviQa[k].status, c[2]));
 
 // =====================================================================
+// G. UVI form: multi-value fields, line-by-line pairing, automatic Ad ID
+//
+// Same contract as the taxonomy Generator: values multiply into every
+// combination unless fields are paired line-by-line. The form never asks for
+// the Ad ID; it comes from each row's UTM Source.
+// =====================================================================
+const UVI_FORM = { destinationUrl: ['https://www.beaches.com/resorts/turks-caicos/'], source: ['facebookinstagram'],
+  campaign: ['Beaches Always On'], geo: ['midwest'], objective: ['Traffic'], influencer: ['mccall.mitchell lookalike'],
+  hotel: ['BTC'], creativeType: ['influencercarousel'], assetVersion: ['1'] };
+const uviForm = (o) => Object.assign({}, UVI_FORM, o);
+const builtFrom = (sel) => expandUviSelections(sel).map((i) => buildUtmUrl(i));
+
+eq('UVI form: one of each = one URL', expandUviSelections(UVI_FORM).length, 1);
+eq('UVI form: Ad ID filled from Meta source', builtFrom(UVI_FORM)[0].fullUrl, LIVE.replace('_52514734464598', '_{{ad.id}}') + '_{{site_source_name}}_{{placement}}');
+const mixed = expandUviSelections(uviForm({ source: ['facebookinstagram', 'tiktok'] }));
+eq('UVI form: two sources = two URLs', mixed.length, 2);
+eq('UVI form: platform label per row', mixed.map((i) => i.platform).join(','), 'Meta,TikTok');
+eq('UVI form: TikTok row gets TikTok token', builtFrom(uviForm({ source: ['tiktok'] }))[0].breakout.campaign.indexOf('_1___ADID_V2___tiktok___PLACEMENT__') !== -1, true);
+eq('UVI form: google row gets {creative}, 10 segments', builtFrom(uviForm({ source: ['google'] }))[0].breakout.campaign.slice(-13), '_1_{creative}');
+eq('UVI form: source na -> Ad ID na', builtFrom(uviForm({ source: ['na'] }))[0].breakout.campaign.slice(-5), '_1_na');
+eq('UVI form: never sends an Ad ID', 'adId' in expandUviSelections(UVI_FORM)[0], false);
+
+// Unpaired fields multiply; paired fields zip row by row.
+const twoByTwo = uviForm({ influencer: ['a', 'b'], hotel: ['BTC', 'SSV'] });
+eq('UVI form: 2 handles x 2 hotels = 4 URLs', expandUviSelections(twoByTwo).length, 4);
+const pairedHotels = uviForm({ hotel: ['BTC', 'SSV'], destinationUrl: ['https://www.beaches.com/resorts/turks-caicos/', 'https://www.sandals.com/sandals-saint-vincent/'],
+  pairedFieldKeys: ['hotel', 'destinationUrl'] });
+const ph = expandUviSelections(pairedHotels);
+eq('UVI form: paired hotel + URL = 2 URLs', ph.length, 2);
+eq('UVI form: paired row 1 aligned', ph[0].hotel + ' ' + ph[0].destinationUrl, 'BTC https://www.beaches.com/resorts/turks-caicos/');
+eq('UVI form: paired row 2 aligned', ph[1].hotel + ' ' + ph[1].destinationUrl, 'SSV https://www.sandals.com/sandals-saint-vincent/');
+eq('UVI form: a single value in a paired field repeats', expandUviSelections(uviForm({ hotel: ['BTC', 'SSV'], influencer: ['x'], pairedFieldKeys: ['hotel', 'influencer'] })).length, 2);
+throws('UVI form: uneven paired counts named by label', () => expandUviSelections(uviForm({ hotel: ['BTC', 'SSV', 'SRB'], influencer: ['a', 'b'], pairedFieldKeys: ['hotel', 'influencer'] })), '"Influencer Handle"');
+throws('UVI form: missing field named by label', () => expandUviSelections(uviForm({ hotel: [] })), 'Missing required field: Hotel Code');
+throws('UVI form: blank lines do not count as values', () => expandUviSelections(uviForm({ campaign: ['  ', ''] })), 'Missing required field: Campaign Name');
+throws('UVI form: combination cap', () => expandUviSelections(uviForm({ influencer: Array.from({ length: 30 }, (_, k) => 'h' + k), assetVersion: Array.from({ length: 20 }, (_, k) => String(k)) })), 'limit 500');
+eq('UVI RPC returns the error, not a throw', runUviUrlBuilder(uviForm({ geo: [] })).ok, false);
+
+// =====================================================================
 // F. Page routing — one Google Sites page per tool
 //
 // Each Sites page embeds `<exec URL>?page=<id>`. An unknown or missing page
