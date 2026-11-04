@@ -348,6 +348,28 @@ eq('GENERATOR_PAGES matches the UI panels', Object.keys(GENERATOR_PAGES).sort().
 eq('Index.html has no stray template markers', (ui.match(/<\?/g) || []).length, 2);
 
 // =====================================================================
+// H. Clear inputs / Clear results: the same on every tool
+//
+// Every tool's action row has both buttons, in the same order, before the
+// tool's main action; every tool has a save/restore and a clear for each half.
+// =====================================================================
+const TOOLS = ['gen', 'ext', 'bulk', 'qa', 'url', 'urlqa'];
+const rows = (ui.match(/<div class="form-actions">[\s\S]*?<\/div>/g) || []);
+eq('one action row per tool', rows.length, TOOLS.length);
+TOOLS.forEach(function (tool) {
+  const row = rows.find((r) => r.indexOf("clearInputs('" + tool + "')") !== -1) || '';
+  eq(tool + ': has Clear inputs', row.indexOf('>Clear inputs<') !== -1, true);
+  eq(tool + ': has Clear results', row.indexOf("clearResults('" + tool + "')") !== -1 && row.indexOf('>Clear results<') !== -1, true);
+  eq(tool + ': Clear inputs, then Clear results, then the main action',
+    row.indexOf('>Clear inputs<') < row.indexOf('>Clear results<') && row.indexOf('>Clear results<') < row.indexOf('btn primary'), true);
+  ['TOOL_STATE', 'TOOL_CLEAR_INPUTS', 'TOOL_CLEAR_RESULTS'].forEach(function (table) {
+    const block = ui.slice(ui.indexOf('const ' + table + ' = {'));
+    eq(tool + ': listed in ' + table, new RegExp('\\n  ' + tool + ': ').test(block.slice(0, block.indexOf('\n};'))), true);
+  });
+});
+eq('no all-in-one Clear left', /onclick="(clearGenerator|resetExtractor|clearBulk|clearQA|clearUrlBuilder|clearUrlQA)\(\)"/.test(ui), false);
+
+// =====================================================================
 // C. Apps Script runtime compatibility
 //
 // code.gs runs on Apps Script's V8, NOT on Node. Node accepts syntax that
