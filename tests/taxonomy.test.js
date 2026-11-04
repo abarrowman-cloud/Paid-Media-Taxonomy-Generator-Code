@@ -226,6 +226,54 @@ eq('NCA QA extra param fails', ncaQa[2].status, 'FAIL');
 eq('Meta QA rejects NCA URL', qaUtmUrls([nca.fullUrl], 'Cuisinart', 'Meta')[0].status, 'FAIL');
 
 // =====================================================================
+// E. UTM Builder — Unique Vacations Inc. dynamic Ad ID + platform/placement
+//
+// Baseline is a real live Beaches ad (Meta export 2026-11-03). Segments 1–10
+// must stay exactly where GA4 reporting reads them; the dynamic platform +
+// placement tail is appended as segments 11–12.
+// =====================================================================
+const UVI = { brand: 'Unique Vacations Inc.', destinationUrl: 'https://www.beaches.com/resorts/turks-caicos/', source: 'facebookinstagram',
+  campaign: 'Beaches Always On', geo: 'midwest', objective: 'Traffic', influencer: 'mccall.mitchell lookalike', hotel: 'BTC',
+  creativeType: 'influencercarousel', assetVersion: '1', adId: '52514734464598' };
+const uviWith = (o) => buildUtmUrl(Object.assign({}, UVI, o));
+const LIVE = 'https://www.beaches.com/resorts/turks-caicos/?utm_source=facebookinstagram&utm_medium=cpc&utm_campaign=viralnation_middlefunnel_beachesalwayson_midwest_traffic_mccall.mitchelllookalike_btc_influencercarousel_1_52514734464598';
+eq('UVI legacy 10-segment build = live URL', uviWith({ includeDynamicTail: false }).fullUrl, LIVE);
+eq('UVI Meta: segments 1-10 unchanged, tail appended', uviWith({}).fullUrl, LIVE + '_{{site_source_name}}_{{placement}}');
+eq('UVI Meta fully dynamic', uviWith({ adId: '{{ad.id}}' }).breakout.campaign.slice(-43), '_1_{{ad.id}}_{{site_source_name}}_{{placement}}'.slice(-43));
+eq('UVI TikTok fully dynamic', uviWith({ source: 'tiktok', adId: '__ADID_V2__' }).breakout.campaign.slice(-37), 'influencercarousel_1___ADID_V2___tiktok___PLACEMENT__'.slice(-37));
+eq('UVI google keeps 10 segments', uviWith({ source: 'google', adId: '{creative}' }).breakout.campaign.split('_').length, 10);
+eq('UVI never writes utm_content', uviWith({ adId: '{{ad.id}}' }).utmString.indexOf('utm_content'), -1);
+eq('UVI TikTok Standard token retired', uviDynamicAdId_('__CID__'), null);
+throws('UVI Meta token on TikTok source refused', () => uviWith({ source: 'tiktok', adId: '{{ad.id}}' }), 'is for meta');
+throws('UVI TikTok token on Meta source refused', () => uviWith({ adId: '__ADID_V2__' }), 'is for tiktok');
+
+eq('one TikTok template, on Smart+ macros', buildUtmUrl({ brand: 'Cuisinart', destinationUrl: MIXED, platform: 'TikTok' }).utmString,
+  '?utm_source=tiktok&utm_campaign=__CAMPAIGN_ID__&utm_medium=paid_social&utm_content=__ADID_V2__');
+throws('old TikTok (Standard) platform key refused', () => buildUtmUrl({ brand: 'Cuisinart', destinationUrl: MIXED, platform: 'TikTok (Standard)' }), 'not supported');
+eq('TikTok QA flags an old __AID__ URL', qaUtmUrls([MIXED + '?utm_source=tiktok&utm_medium=paid_social&utm_content=__AID__&utm_campaign=__CAMPAIGN_ID__'], 'Cuisinart', 'TikTok')[0].status, 'FAIL');
+
+// QA: built URLs, live (legacy) URLs, and what GA4 will receive once filled in
+const uviQaCases = [
+  ['live 10-segment URL',              LIVE, 'PASS'],
+  ['Meta built, all dynamic',          uviWith({ adId: '{{ad.id}}' }).fullUrl, 'PASS'],
+  ['TikTok built, all dynamic',        uviWith({ source: 'tiktok', adId: '__ADID_V2__' }).fullUrl, 'PASS'],
+  ['Meta filled: ig + instagram_stories', LIVE + '_ig_instagram_stories', 'PASS'],
+  ['Meta filled: 4-part placement',    LIVE + '_an_audience_network_rewarded_video', 'PASS'],
+  ['TikTok filled',                    LIVE.replace('facebookinstagram', 'tiktok') + '_tiktok_TikTok', 'PASS'],
+  ['SGO hotel',                        uviWith({ hotel: 'SGO' }).fullUrl, 'PASS'],
+  ['unknown platform segment',         LIVE + '_youtube_feed', 'FAIL'],
+  ['11 segments (placement missing)',  LIVE + '_ig', 'FAIL'],
+  ['utm_content not allowed',          LIVE + '&utm_content=reels', 'FAIL'],
+  // Real Meta preview click, Cuisinart account 2026-11-03: Meta's placement value is
+  // capitalised and carries the device; Meta also appends its own numeric IDs.
+  ['real Meta click (preview)',        'https://www.beaches.com/resorts/turks-caicos/?utm_source=facebookinstagram&utm_medium=cpc&utm_campaign=viralnation_middlefunnel_beachesalwayson_midwest_traffic_mccall.mitchelllookalike_btc_influencercarousel_1_120251072809800107_fb_Facebook_Desktop_Feed&utm_id=120250855072050107&utm_content=120251072845890107&utm_term=120250855072040107&fbclid=IwY2xjawVXac&campaign_id=120250855072050107&ad_id=120251072845890107', 'PASS'],
+  ['numeric utm_content without a click marker', LIVE + '&utm_content=120251072845890107', 'FAIL'],
+  ['Meta token on a TikTok URL',       uviWith({ adId: '{{ad.id}}' }).fullUrl.replace('utm_source=facebookinstagram', 'utm_source=tiktok'), 'FAIL']
+];
+const uviQa = qaUtmUrls(uviQaCases.map((c) => c[1]), 'Unique Vacations Inc.', '');
+uviQaCases.forEach((c, k) => eq('UVI QA ' + c[0], uviQa[k].status, c[2]));
+
+// =====================================================================
 // C. Apps Script runtime compatibility
 //
 // code.gs runs on Apps Script's V8, NOT on Node. Node accepts syntax that

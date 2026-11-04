@@ -63,6 +63,22 @@ Don't leave the folder parked on a feature branch after that branch merges. A me
 | `Index.html` | The generator UI served by the web app |
 | `appsscript.json` | Apps Script project manifest |
 | `tests/taxonomy.test.js` | Offline regression suite — `node tests/taxonomy.test.js` |
+| `docs/uvi-utm-bulk-template.md` | UVI bulk UTM flow: template columns, dynamic Ad ID tokens, placement values, and the prompt the team pastes into Claude.ai with a Meta export |
+| `templates/uvi-utm-bulk-template.csv` | Empty UVI bulk template (also downloadable from the UTM Builder) |
+
+## UVI UTM Builder: dynamic Ad ID, platform and placement
+
+- **Ad ID (segment 10)** can be a platform token instead of a typed ID: `{{ad.id}}` (Meta),
+  `__ADID_V2__` (TikTok), `{creative}` (Google). Tokens skip the sanitizer, which would otherwise strip
+  TikTok's underscores.
+- **TikTok is one platform** across every brand, on the Smart+ macros (TikTok's default campaign type).
+  The retired TikTok (Standard) template used `__AID__`, which TikTok fills with the **ad group** ID.
+- **Platform + placement** are appended to `utm_campaign` as segments 11–12, filled at click time
+  (Meta `{{site_source_name}}_{{placement}}`, TikTok `tiktok___PLACEMENT__`). GA4 only receives
+  source / medium / campaign for UVI, so nothing goes in `utm_content` / `utm_term`. Segments 1–10 keep
+  their positions; read 12 onward re-joined with `_`, since Meta placements contain underscores.
+- **Bulk sheet upload** builds one URL per template row and can emit a Meta bulk-import file
+  (`Ad ID`, `Link`, `URL Tags`). See `docs/uvi-utm-bulk-template.md`.
 
 ## Apps Script is not Node
 
