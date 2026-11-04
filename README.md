@@ -64,8 +64,6 @@ Don't leave the folder parked on a feature branch after that branch merges. A me
 | `appsscript.json` | Apps Script project manifest |
 | `tests/taxonomy.test.js` | Offline regression suite — `node tests/taxonomy.test.js` |
 | `docs/google-sites-guide.md` | Google Sites page map, embed setup, validation, and an agent prompt for building the per-tool pages |
-| `docs/uvi-utm-bulk-template.md` | UVI bulk UTM flow: template columns, dynamic Ad ID tokens, placement values, and the prompt the team pastes into Claude.ai with a Meta export |
-| `templates/uvi-utm-bulk-template.csv` | Empty UVI bulk template (also downloadable from the UTM Builder) |
 
 ## One Google Sites page per tool
 
@@ -91,17 +89,20 @@ included) except the one line that injects the page. The suite counts them.
 
 ## UVI UTM Builder: dynamic Ad ID, platform and placement
 
-- **Ad ID (segment 10)** can be a platform token instead of a typed ID: `{{ad.id}}` (Meta),
-  `__ADID_V2__` (TikTok), `{creative}` (Google). Tokens skip the sanitizer, which would otherwise strip
-  TikTok's underscores.
+- **Multiple values, like the Generator.** Every field takes one or more values and the tool
+  builds every combination; fields ticked *Pair line-by-line* zip row by row instead (e.g. each hotel
+  with its own landing page). Expansion is `expandUviSelections` in `code.gs`, capped at 500 URLs.
+- **Ad ID (segment 10) is automatic.** The form has no Ad ID input: each row gets its UTM Source's
+  dynamic token, `{{ad.id}}` (Meta), `__ADID_V2__` (TikTok), `{creative}` (Google), or `na` for
+  source `na`. Tokens skip the sanitizer, which would otherwise strip TikTok's underscores.
 - **TikTok is one platform** across every brand, on the Smart+ macros (TikTok's default campaign type).
   The retired TikTok (Standard) template used `__AID__`, which TikTok fills with the **ad group** ID.
 - **Platform + placement** are appended to `utm_campaign` as segments 11–12, filled at click time
   (Meta `{{site_source_name}}_{{placement}}`, TikTok `tiktok___PLACEMENT__`). GA4 only receives
   source / medium / campaign for UVI, so nothing goes in `utm_content` / `utm_term`. Segments 1–10 keep
   their positions; read 12 onward re-joined with `_`, since Meta placements contain underscores.
-- **Bulk sheet upload** builds one URL per template row and can emit a Meta bulk-import file
-  (`Ad ID`, `Link`, `URL Tags`). See `docs/uvi-utm-bulk-template.md`.
+- **No bulk sheet upload.** It was retired once the Ad ID went dynamic (multi-value fields cover
+  the same need). The last version with it is commit `72bfbe4` if it's ever needed again.
 
 ## Apps Script is not Node
 

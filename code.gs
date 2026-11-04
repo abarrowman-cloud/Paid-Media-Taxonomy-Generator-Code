@@ -2218,9 +2218,9 @@ const URL_BUILDER_UTC_CONFIG = {
   // sanitized: the sanitizer would strip TikTok's underscores).
   // TikTok: Smart+ only (TikTok's default). __AID__ is the AD GROUP id — never use it here.
   dynamicAdIdTokens: [
-    { token: '{{ad.id}}',   platform: 'meta',   label: 'Meta — {{ad.id}}' },
-    { token: '__ADID_V2__', platform: 'tiktok', label: 'TikTok — __ADID_V2__' },
-    { token: '{creative}',  platform: 'google', label: 'Google / YouTube — {creative}' }
+    { token: '{{ad.id}}',   platform: 'meta' },
+    { token: '__ADID_V2__', platform: 'tiktok' },
+    { token: '{creative}',  platform: 'google' }
   ],
 
   // Segments 11–12 of utm_campaign: platform + placement, filled by the ad
@@ -2242,6 +2242,13 @@ const URL_BUILDER_UTC_CONFIG = {
 function uviSourcePlatform_(source) {
   const map = URL_BUILDER_UTC_CONFIG.sourcePlatform;
   return Object.prototype.hasOwnProperty.call(map, source) ? map[source] : '';
+}
+
+/** The dynamic Ad ID token for a platform family ('' when it has none, e.g. source na). */
+function uviAutoAdIdToken_(platform) {
+  const list = URL_BUILDER_UTC_CONFIG.dynamicAdIdTokens;
+  for (let i = 0; i < list.length; i++) if (list[i].platform === platform) return list[i].token;
+  return '';
 }
 
 /** The dynamic Ad ID entry for a token, or null when the value is a literal ID. */
@@ -2317,12 +2324,16 @@ function buildUtmUrl(params) {
     if (!funnel) throw new Error('Objective "' + objective + '" has no mapped funnel level. Pick one of: ' + Object.keys(URL_BUILDER_UTC_CONFIG.funnelMap).join(', '));
     const sourcePlatform = uviSourcePlatform_(source);
 
-    // Segment 10: a dynamic token passes through verbatim; a literal ID is sanitized.
-    const dynAdId = uviDynamicAdId_(params.adId);
+    // Segment 10: the form never asks for it. With no Ad ID given, the source's
+    // dynamic token is used (Meta {{ad.id}}, TikTok __ADID_V2__, Google {creative};
+    // "na" for source na). A token passes through verbatim; a literal ID (legacy
+    // URLs, tests) is sanitized.
+    const adIdGiven = String(params.adId == null ? '' : params.adId).trim();
+    const dynAdId = uviDynamicAdId_(adIdGiven || uviAutoAdIdToken_(sourcePlatform));
     if (dynAdId && sourcePlatform && dynAdId.platform !== sourcePlatform) {
       throw new Error('Ad ID token ' + dynAdId.token + ' is for ' + dynAdId.platform + ', but UTM Source "' + source + '" is ' + sourcePlatform + '. Pick the token for the platform the ad runs on.');
     }
-    const adIdSegment = dynAdId ? dynAdId.token : urlBuilderSanitize_(params.adId);
+    const adIdSegment = dynAdId ? dynAdId.token : (urlBuilderSanitize_(adIdGiven) || 'na');
 
     // Dynamic platform + placement tail (see dynamicTail). includeDynamicTail:false
     // rebuilds a legacy 10-segment string, e.g. to match an ad already live.
@@ -2432,6 +2443,77 @@ function checkUrlsLive_(urls) {
   });
 }
 
+/**
+ * UVI form fields, in form order. Every field takes one or more values, the
+ * same as the taxonomy Generator: values multiply into every combination,
+ * except fields ticked "Pair line-by-line", which zip row by row
+ * (zipPairedFields_: each paired field has 1 value or the same count).
+ */
+const UVI_FORM_FIELDS = [
+  { key: 'destinationUrl', label: 'Destination URL' },
+  { key: 'source',         label: 'UTM Source' },
+  { key: 'campaign',       label: 'Campaign Name' },
+  { key: 'geo',            label: 'Geo' },
+  { key: 'objective',      label: 'Objective' },
+  { key: 'influencer',     label: 'Influencer Handle' },
+  { key: 'hotel',          label: 'Hotel Code' },
+  { key: 'creativeType',   label: 'Creative Type' },
+  { key: 'assetVersion',   label: 'Asset Version' }
+];
+const UVI_MAX_URLS = 500;
+const UVI_PLATFORM_LABELS = { meta: 'Meta', tiktok: 'TikTok', google: 'YouTube' };
+
+/** Expand UVI form selections into one buildUtmUrl input per URL. */
+function expandUviSelections(selections) {
+  selections = selections || {};
+  const pairedSet = {};
+  (selections.pairedFieldKeys || []).forEach(function(k) { pairedSet[k] = true; });
+  const paired = {};
+  const keys = [];
+  const lists = [];
+  UVI_FORM_FIELDS.forEach(function(f) {
+    const vals = toTrimmedArray(selections[f.key]);
+    if (vals.length === 0) throw new Error('Missing required field: ' + f.label);
+    if (pairedSet[f.key]) paired[f.key] = vals;
+    else { keys.push(f.key); lists.push(vals); }
+  });
+
+  let rows;
+  try {
+    rows = zipPairedFields_(paired);
+  } catch (e) {
+    // Name the field the way the form does, not by its internal key.
+    let msg = e.message;
+    UVI_FORM_FIELDS.forEach(function(f) { msg = msg.split('"' + f.key + '"').join('"' + f.label + '"'); });
+    throw new Error(msg);
+  }
+
+  const total = lists.reduce(function(n, l) { return n * l.length; }, rows.length);
+  if (total > UVI_MAX_URLS) {
+    throw new Error('That would build ' + total + ' URLs (limit ' + UVI_MAX_URLS + '). Pair fields line-by-line or split the request.');
+  }
+
+  return cartesian([rows].concat(lists)).map(function(combo) {
+    const input = { brand: 'Unique Vacations Inc.' };
+    Object.assign(input, combo[0]);
+    keys.forEach(function(k, j) { input[k] = combo[j + 1]; });
+    // Platform drives the "where to paste it" instructions in the results.
+    input.platform = UVI_PLATFORM_LABELS[uviSourcePlatform_(urlBuilderSanitize_(input.source))] || '';
+    return input;
+  });
+}
+
+/** RPC: expand the UVI form, then build + liveness-check every URL. */
+function runUviUrlBuilder(selections) {
+  let inputs;
+  try {
+    inputs = expandUviSelections(selections);
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+  return runUrlBuilder(inputs);
+}
+
 /** RPC: build URL(s) and attach liveness for each. */
 function runUrlBuilder(inputsArray) {
   const results = [];
@@ -2472,10 +2554,7 @@ function exportUrlBuilderToNewSheet(results) {
   const ss = SpreadsheetApp.create(title);
   const sheet = ss.getActiveSheet();
   sheet.setName('URL Builder');
-  // Bulk-sheet rows carry the platform IDs through so the output can be matched
-  // back to (and re-imported against) the ads it was built for.
-  const header = ['Full URL', 'UTM String', 'Platform', 'Implementation Instructions', 'Source', 'Medium', 'Campaign', 'Term', 'Content', 'Liveness', 'Status Code', 'Error / Reason',
-                  'Platform Campaign ID', 'Platform Ad Set ID', 'Platform Ad ID', 'Ad Name'];
+  const header = ['Full URL', 'UTM String', 'Platform', 'Implementation Instructions', 'Source', 'Medium', 'Campaign', 'Term', 'Content', 'Liveness', 'Status Code', 'Error / Reason'];
   sheet.getRange(1, 1, 1, header.length)
        .setValues([header])
        .setFontWeight('bold')
@@ -2501,15 +2580,9 @@ function exportUrlBuilderToNewSheet(results) {
       b.content || '',
       r.error ? '' : (live.alive ? 'LIVE' : 'DEAD'),
       r.error ? '' : String(live.code || ''),
-      r.error || (live.alive ? '' : (live.reason || '')),
-      (r.input && r.input.platformCampaignId) || '',
-      (r.input && r.input.platformAdSetId) || '',
-      (r.input && r.input.platformAdId) || '',
-      (r.input && r.input.adName) || ''
+      r.error || (live.alive ? '' : (live.reason || ''))
     ];
   });
-  // Plain text: 17+ digit platform IDs lose precision if Sheets reads them as numbers.
-  sheet.getRange(2, 13, rows.length, 3).setNumberFormat('@');
   sheet.getRange(2, 1, rows.length, header.length).setValues(rows);
   // Wrap the long instruction text
   sheet.getRange(2, 4, rows.length, 1).setWrap(true).setVerticalAlignment('top');
