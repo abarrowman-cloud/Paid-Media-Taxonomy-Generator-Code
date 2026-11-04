@@ -63,6 +63,7 @@ Don't leave the folder parked on a feature branch after that branch merges. A me
 | `Index.html` | The generator UI served by the web app |
 | `appsscript.json` | Apps Script project manifest |
 | `tests/taxonomy.test.js` | Offline regression suite — `node tests/taxonomy.test.js` |
+| `docs/google-sites-guide.md` | Google Sites page map, embed setup, validation, and an agent prompt for building the per-tool pages |
 | `docs/uvi-utm-bulk-template.md` | UVI bulk UTM flow: template columns, dynamic Ad ID tokens, placement values, and the prompt the team pastes into Claude.ai with a Meta export |
 | `templates/uvi-utm-bulk-template.csv` | Empty UVI bulk template (also downloadable from the UTM Builder) |
 
@@ -81,6 +82,8 @@ tabbed UI, so existing links don't break.
 | Platform Taxonomy Tools | Taxonomy QA | `<exec URL>?page=qa` |
 | UTM Tools | UTM Builder | `<exec URL>?page=url` |
 | UTM Tools | URL QA | `<exec URL>?page=urlqa` |
+
+Setup, validation and a ready-to-paste agent prompt: `docs/google-sites-guide.md`.
 
 The ids are `GENERATOR_PAGES` in `code.gs`; the test suite fails if they drift from the panels in
 `Index.html`. `Index.html` is served as a template, so **never write `<?` anywhere in it** (comments
