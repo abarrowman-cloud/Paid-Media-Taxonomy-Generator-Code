@@ -1350,6 +1350,8 @@ function getTaxonomyWithSource() {
       platformTemplates:     URL_BUILDER_PLATFORM_TEMPLATES,
       brandTemplates:        URL_BUILDER_BRAND_TEMPLATES,
       platformInstructions:  URL_BUILDER_PLATFORM_INSTRUCTIONS,
+      resultColumns:         URL_BUILDER_RESULT_COLUMNS,
+      columnLetters:         URL_BUILDER_COLUMN_LETTERS,
       sourceToPlatform:      URL_BUILDER_SOURCE_TO_PLATFORM,
       utc:                   URL_BUILDER_UTC_CONFIG,
       utcBannedChars:        URL_BUILDER_UTC_BANNED_CHARS
@@ -2144,6 +2146,10 @@ const URL_BUILDER_PLATFORM_TEMPLATES = {
  *   3. Paste it below as: 'https://drive.google.com/uc?id=<FILE_ID>&export=view'
  *      (the /uc?...&export=view form embeds; the standard /view link does not).
  */
+/** Result columns A-C, in order. Instructions name a column by its short name. */
+const URL_BUILDER_RESULT_COLUMNS = ['Original URL', 'UTM String', 'Full URL (Original URL + UTM String)'];
+const URL_BUILDER_COLUMN_LETTERS = { 'Original URL': 'A', 'UTM String': 'B', 'Full URL': 'C' };
+
 const URL_BUILDER_PLATFORM_INSTRUCTIONS = {
   'Meta': {
     column: 'UTM String',
@@ -2153,8 +2159,8 @@ const URL_BUILDER_PLATFORM_INSTRUCTIONS = {
   },
   'TikTok': {
     column: 'Full URL',
-    short:  "Paste the Full URL (column A) into TikTok's Destination URL field. Auto-detect: OFF.",
-    full:   "Add 'Full URL' — column A — directly to the Destination URL for each ad driving to this destination URL. Once added, ensure all parameters append correctly by selecting 'edit' under 'Preview' in the UI. Ensure auto-detect is turned off!",
+    short:  "Paste the Full URL (column C) into TikTok's Destination URL field. Auto-detect: OFF.",
+    full:   "Add 'Full URL' — column C — directly to the Destination URL for each ad driving to this destination URL. Once added, ensure all parameters append correctly by selecting 'edit' under 'Preview' in the UI. Ensure auto-detect is turned off!",
     screenshotUrl: 'https://drive.google.com/thumbnail?id=1NUCLKg_6jnfwOZKaHM39wCub8TjbMfQT&sz=w1600'
   },
   'YouTube': {
@@ -2165,8 +2171,8 @@ const URL_BUILDER_PLATFORM_INSTRUCTIONS = {
   },
   'Pinterest': {
     column: 'Full URL',
-    short:  "Paste the Full URL (column A) into Pinterest's Destination link field. Validate via the ad's URL preview.",
-    full:   "Add 'Full URL' — column A — directly to the Destination link field for the ad. To validate: at the ad level, select 'Edit' on an ad; in the Ad details section, expand the 'URL preview' dropdown and confirm the dynamic UTM parameters ({campaignid}, {adid}) are populated; then click the previewed link to open it in a new tab and confirm the page loads properly. FYI — this account also has account-level UTM auto-tagging enabled (Business Manager → URL tracking), which appends the same parameters automatically; Pinterest will NOT override parameters you enter manually, so entering the Full URL here is safe.",
+    short:  "Paste the Full URL (column C) into Pinterest's Destination link field. Validate via the ad's URL preview.",
+    full:   "Add 'Full URL' — column C — directly to the Destination link field for the ad. To validate: at the ad level, select 'Edit' on an ad; in the Ad details section, expand the 'URL preview' dropdown and confirm the dynamic UTM parameters ({campaignid}, {adid}) are populated; then click the previewed link to open it in a new tab and confirm the page loads properly. FYI — this account also has account-level UTM auto-tagging enabled (Business Manager → URL tracking), which appends the same parameters automatically; Pinterest will NOT override parameters you enter manually, so entering the Full URL here is safe.",
     screenshotUrl: 'https://drive.google.com/thumbnail?id=1AeZ_olEGMWHX2LrhCHvB4_Cf08IsjJwg&sz=w1600'
   }
 };
@@ -2276,7 +2282,7 @@ function urlBuilderSanitize_(v) {
   return String(v == null ? '' : v).toLowerCase().replace(URL_BUILDER_STRIP_REGEX, '');
 }
 
-/** Build a UTM-tagged URL for one input. Returns { fullUrl, utmString, breakout }. */
+/** Build a UTM-tagged URL for one input. Returns { originalUrl, fullUrl, utmString, breakout }. */
 function buildUtmUrl(params) {
   const brand = String((params && params.brand) || '').trim();
   const destUrl = String((params && params.destinationUrl) || '').trim();
@@ -2368,7 +2374,7 @@ function buildUtmUrl(params) {
     urlBuilderParseBreakout_(template, breakout);
   }
 
-  return { fullUrl: destUrl + utmString, utmString: utmString, breakout: breakout };
+  return { originalUrl: destUrl, fullUrl: destUrl + utmString, utmString: utmString, breakout: breakout };
 }
 
 /** Fill a breakout object from a "?k=v&k=v" UTM template. */
@@ -2522,7 +2528,7 @@ function runUrlBuilder(inputsArray) {
       const out = buildUtmUrl(input || {});
       results.push({
         ok: true, input: input,
-        fullUrl: out.fullUrl, utmString: out.utmString, breakout: out.breakout
+        originalUrl: out.originalUrl, fullUrl: out.fullUrl, utmString: out.utmString, breakout: out.breakout
       });
     } catch (e) {
       results.push({ ok: false, input: input, error: e.message });
@@ -2554,7 +2560,7 @@ function exportUrlBuilderToNewSheet(results) {
   const ss = SpreadsheetApp.create(title);
   const sheet = ss.getActiveSheet();
   sheet.setName('URL Builder');
-  const header = ['Full URL', 'UTM String', 'Platform', 'Implementation Instructions', 'Source', 'Medium', 'Campaign', 'Term', 'Content', 'Liveness', 'Status Code', 'Error / Reason'];
+  const header = URL_BUILDER_RESULT_COLUMNS.concat(['Platform', 'Implementation Instructions', 'Source', 'Medium', 'Campaign', 'Term', 'Content', 'Liveness', 'Status Code', 'Error / Reason']);
   sheet.getRange(1, 1, 1, header.length)
        .setValues([header])
        .setFontWeight('bold')
@@ -2569,8 +2575,9 @@ function exportUrlBuilderToNewSheet(results) {
     if (platform) platformsSeen[platform] = true;
     const instr = (URL_BUILDER_PLATFORM_INSTRUCTIONS[platform] && URL_BUILDER_PLATFORM_INSTRUCTIONS[platform].full) || '';
     return [
-      r.fullUrl || '',
+      r.originalUrl || '',
       utmString,
+      r.fullUrl || '',
       platform,
       instr,
       b.source || '',
@@ -2585,23 +2592,24 @@ function exportUrlBuilderToNewSheet(results) {
   });
   sheet.getRange(2, 1, rows.length, header.length).setValues(rows);
   // Wrap the long instruction text
-  sheet.getRange(2, 4, rows.length, 1).setWrap(true).setVerticalAlignment('top');
-  // Colour the Liveness column (column 10 in the new layout)
+  sheet.getRange(2, 5, rows.length, 1).setWrap(true).setVerticalAlignment('top');
+  // Colour the Liveness column (column 11)
   const livenessBgs = rows.map(function(row) {
-    if (row[9] === 'LIVE') return ['#D9EAD3'];
-    if (row[9] === 'DEAD') return ['#F4CCCC'];
+    if (row[10] === 'LIVE') return ['#D9EAD3'];
+    if (row[10] === 'DEAD') return ['#F4CCCC'];
     return ['#FFFFFF'];
   });
-  sheet.getRange(2, 10, rows.length, 1).setBackgrounds(livenessBgs);
+  sheet.getRange(2, 11, rows.length, 1).setBackgrounds(livenessBgs);
   sheet.setFrozenRows(1);
-  sheet.setColumnWidth(1, 520);   // Full URL
+  sheet.setColumnWidth(1, 380);   // Original URL
   sheet.setColumnWidth(2, 380);   // UTM String
-  sheet.setColumnWidth(3, 140);   // Platform
-  sheet.setColumnWidth(4, 480);   // Instructions
-  for (let c = 5; c <= 9; c++) sheet.setColumnWidth(c, 140);
-  sheet.setColumnWidth(10, 90);   // Liveness
-  sheet.setColumnWidth(11, 90);   // Code
-  sheet.setColumnWidth(12, 260);  // Error/Reason
+  sheet.setColumnWidth(3, 520);   // Full URL
+  sheet.setColumnWidth(4, 140);   // Platform
+  sheet.setColumnWidth(5, 480);   // Instructions
+  for (let c = 6; c <= 10; c++) sheet.setColumnWidth(c, 140);
+  sheet.setColumnWidth(11, 90);   // Liveness
+  sheet.setColumnWidth(12, 90);   // Code
+  sheet.setColumnWidth(13, 260);  // Error/Reason
 
   // Add an Instructions tab when there's a single platform across all rows —
   // this keeps the screenshot and the verbose copy in a dedicated, readable spot.
@@ -2614,7 +2622,7 @@ function exportUrlBuilderToNewSheet(results) {
       tab.getRange(1, 1).setValue('How to implement these URLs in ' + platform)
         .setFontWeight('bold').setFontSize(14).setBackground('#000000').setFontColor('#FFC227');
       tab.getRange(2, 1).setValue('What to copy:').setFontWeight('bold');
-      tab.getRange(2, 2).setValue(inst.column ? (inst.column + ' (column ' + (inst.column === 'Full URL' ? 'A' : 'B') + ')') : '');
+      tab.getRange(2, 2).setValue(inst.column ? (inst.column + ' (column ' + (URL_BUILDER_COLUMN_LETTERS[inst.column] || '') + ')') : '');
       tab.getRange(3, 1).setValue('Where to paste:').setFontWeight('bold');
       tab.getRange(3, 2).setValue(inst.full || '').setWrap(true);
       if (inst.screenshotUrl) {

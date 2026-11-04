@@ -3878,7 +3878,7 @@ function renderUrlResults() {
   if (singlePlatform) {
     const inst = platformInstr[singlePlatform] || {};
     const colName = inst.column || 'UTM String';
-    const colLetter = (colName === 'Full URL') ? 'A' : 'B';
+    const colLetter = urlColumnLetter_(colName);
     let screenshotHtml = '';
     if (inst.screenshotUrl) {
       screenshotHtml =
@@ -3909,7 +3909,7 @@ function renderUrlResults() {
 
   // ---- Build the table rows ----
   const showInstrCol = !singlePlatform && uniquePlatforms.length > 1;
-  const totalCols = showInstrCol ? 12 : 11;
+  const totalCols = showInstrCol ? 13 : 12;
 
   const rowsHtml = urlLastResults.map(function(r, i) {
     if (!r.ok) {
@@ -3926,15 +3926,16 @@ function renderUrlResults() {
     const platform = (r.input && r.input.platform) || '';
     const inst = platformInstr[platform] || {};
     const colName = inst.column || '';
-    const colLetter = (colName === 'Full URL') ? 'A' : (colName === 'UTM String' ? 'B' : '');
+    const colLetter = urlColumnLetter_(colName);
     const platformCell = '<td class="col-platform">' + escapeHtml(platform || '—') + '</td>';
     const instrCell = showInstrCol
       ? '<td class="col-instructions"><strong>Copy ' + escapeHtml(colName) + (colLetter ? ' (col ' + colLetter + ')' : '') + '</strong>: ' + escapeHtml(inst.short || '') + '</td>'
       : '';
     return '<tr>' +
              '<td>' + (i + 1) + '</td>' +
-             '<td>' + escapeHtml(r.fullUrl) + '</td>' +
+             '<td>' + escapeHtml(r.originalUrl || '') + '</td>' +
              '<td>' + escapeHtml(stripLeadingQ(r.utmString)) + '</td>' +
+             '<td>' + escapeHtml(r.fullUrl) + '</td>' +
              platformCell +
              instrCell +
              '<td>' + escapeHtml(b.source || '—') + '</td>' +
@@ -3950,8 +3951,7 @@ function renderUrlResults() {
   const headerRow =
     '<thead><tr>' +
       '<th>#</th>' +
-      '<th>Full URL</th>' +
-      '<th>UTM String</th>' +
+      urlResultColumns_().map(function(c) { return '<th>' + escapeHtml(c) + '</th>'; }).join('') +
       '<th>Platform</th>' +
       (showInstrCol ? '<th>Implementation</th>' : '') +
       '<th>Source</th>' +
@@ -3977,6 +3977,15 @@ function renderUrlResults() {
       '<button type="button" class="btn secondary" onclick="downloadUrlBuilderCsv()">Download CSV</button>' +
     '</div>';
   wrap.innerHTML = table;
+}
+
+/** Result columns A-C and their letters, from the spec (fallback matches code.gs). */
+function urlResultColumns_() {
+  return (URL_BUILDER && URL_BUILDER.resultColumns) || ['Original URL', 'UTM String', 'Full URL (Original URL + UTM String)'];
+}
+function urlColumnLetter_(name) {
+  const letters = (URL_BUILDER && URL_BUILDER.columnLetters) || { 'Original URL': 'A', 'UTM String': 'B', 'Full URL': 'C' };
+  return letters[name] || '';
 }
 
 function copyUrlBuilderAll() {
@@ -4017,15 +4026,16 @@ function downloadUrlBuilderCsv() {
   });
   const uniquePlatforms = Object.keys(platformsSeen);
 
-  const header = ['Full URL', 'UTM String', 'Platform', 'Implementation Instructions', 'Source', 'Medium', 'Campaign', 'Term', 'Content', 'Liveness', 'Status Code', 'Error / Reason'];
+  const header = urlResultColumns_().concat(['Platform', 'Implementation Instructions', 'Source', 'Medium', 'Campaign', 'Term', 'Content', 'Liveness', 'Status Code', 'Error / Reason']);
   const rows = urlLastResults.map(function(r) {
     const b = r.breakout || {};
     const live = r.liveness || {};
     const platform = (r.input && r.input.platform) || '';
     const inst = platformInstr[platform] || {};
     return [
-      r.fullUrl || '',
+      r.originalUrl || '',
       (r.utmString || '').replace(/^\?/, ''),
+      r.fullUrl || '',
       platform,
       inst.full || '',
       b.source || '', b.medium || '', b.campaign || '', b.term || '', b.content || '',
