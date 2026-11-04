@@ -3229,10 +3229,30 @@ function renderUrlUtcFields_() {
   const banned = (URL_BUILDER.utcBannedChars || []).filter(function(c){ return c !== '\n' && c !== '\r' && c !== '\t'; }).map(function(c){return '"' + c + '"';}).join(' ');
   const freeTextHint = '<div class="hint">No ' + banned + ' — these would break the UTM string.</div>';
   const guardAttrs = ' onkeypress="guardUtcFreeText(event)" onpaste="guardUtcFreeTextPaste(event)" oninput="trimUtcFreeTextInput(this)"';
+  const adIdModes = '<option value="">Manual — type the ID below</option>' +
+    (u.dynamicAdIdTokens || []).map(function(d){ return '<option value="' + escapeAttr(d.token) + '">Dynamic: ' + escapeHtml(d.label) + '</option>'; }).join('');
   return (
     '<div class="field-grid">' +
+      '<div class="field-cell wide" style="background:var(--vn-soft); border-radius:6px; padding:10px 12px; border:1px solid var(--vn-line);">' +
+        '<div class="field-header"><span class="field-num">★</span><span class="field-label">Mode</span></div>' +
+        '<label style="margin-right:14px;"><input type="radio" name="url-mode" value="single" checked onchange="onUrlModeChange()"> Single URL</label>' +
+        '<label><input type="radio" name="url-mode" value="bulk" onchange="onUrlModeChange()"> Bulk sheet upload</label>' +
+        '<div class="hint" style="margin-top:6px;">Bulk sheet: upload the UVI UTM bulk template (CSV or XLSX), usually filled by Claude from a Meta / TikTok bulk export. One URL per row; platform IDs are carried through so the output can be re-imported.</div>' +
+      '</div>' +
+    '</div>' +
+    '<div id="url-mode-bulk" style="display:none;">' +
+      '<div class="field-grid">' +
+        '<div class="field-cell wide">' +
+          '<div class="field-header"><span class="field-num">1</span><span class="field-label">Bulk template <span class="field-note">(CSV or XLSX, first sheet, header row first)</span></span></div>' +
+          '<input type="file" id="url_uvi_bulk_file" accept=".csv,.xlsx,.xls" onchange="handleUviBulkFile(event)">' +
+          '<div class="hint" id="url_uvi_bulk_status"></div>' +
+          '<button type="button" class="btn secondary" style="margin-top:8px;" onclick="downloadUviBulkTemplate()">Download UVI bulk template</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="field-grid" id="url-mode-single">' +
       cell_(1, 'Destination URL', '(http:// or https://, no query string)', '<input type="url" id="url_destinationUrl" placeholder="https://www.sandals.com/sandals-saint-vincent/">', true) +
-      cell_(2, 'UTM Source', '(lowercase, no special chars)', '<select id="url_source"><option value="">— pick —</option>' + src + '</select>') +
+      cell_(2, 'UTM Source', '(lowercase, no special chars)', '<select id="url_source" onchange="onUviSourceChange()"><option value="">— pick —</option>' + src + '</select>') +
       cell_(3, 'Campaign Name', '(free-form)', '<input type="text" id="url_campaign" placeholder="Always On"' + guardAttrs + '>' + freeTextHint) +
       cell_(4, 'Geo', '', '<select id="url_geo"><option value="">— pick —</option>' + geo + '</select>') +
       cell_(5, 'Objective', '(drives funnel level)', '<select id="url_objective"><option value="">— pick —</option>' + obj + '</select>') +
@@ -3240,9 +3260,38 @@ function renderUrlUtcFields_() {
       cell_(7, 'Hotel Code', '(3-letter code)', '<select id="url_hotel"><option value="">— pick —</option>' + hotel + '</select>') +
       cell_(8, 'Creative Type', '', '<select id="url_creativeType"><option value="">— pick —</option>' + creative + '</select>') +
       cell_(9, 'Asset Version', '(free-form, usually numeric)', '<input type="text" id="url_assetVersion" placeholder="1"' + guardAttrs + '>' + freeTextHint) +
-      cell_(10, 'Ad ID', '(free-form, long numeric ID)', '<input type="text" id="url_adId" placeholder="6886040162394"' + guardAttrs + '>' + freeTextHint) +
+      cell_(10, 'Ad ID', '(dynamic token, or the long numeric ID)',
+        '<select id="url_adIdMode" onchange="onUviAdIdModeChange()">' + adIdModes + '</select>' +
+        '<input type="text" id="url_adId" style="margin-top:6px;" placeholder="6886040162394"' + guardAttrs + '>' +
+        '<div class="hint">Dynamic = the platform fills the real ad ID at click time, so the URL can be built before the ad exists.</div>') +
+      cell_(11, 'Platform + Placement', '(automatic — segments 11–12)',
+        '<div class="hint" id="url_dynamicTail" style="font-family:\'JetBrains Mono\', monospace;">Pick a UTM Source</div>' +
+        '<div class="hint">Filled by the platform at click time (Meta: fb / ig + its own placement text, e.g. Facebook_Desktop_Feed; TikTok: tiktok + TikTok / Pangle). No ad set split needed.</div>') +
     '</div>'
   );
+}
+
+function onUviSourceChange() {
+  const u = (URL_BUILDER && URL_BUILDER.utc) || {};
+  const source = (document.getElementById('url_source') || {}).value || '';
+  const tail = ((u.dynamicTail || {})[(u.sourcePlatform || {})[source] || ''] || []);
+  const el = document.getElementById('url_dynamicTail');
+  if (el) el.textContent = !source ? 'Pick a UTM Source' : (tail.length ? '_' + tail.join('_') : 'none — stays 10 segments');
+}
+
+function onUviAdIdModeChange() {
+  const mode  = (document.getElementById('url_adIdMode') || {}).value || '';
+  const input = document.getElementById('url_adId');
+  if (!input) return;
+  input.style.display = mode ? 'none' : '';
+}
+
+/** The ad platform a UVI row is trafficked on — picks the implementation instructions. */
+function uviRowPlatform_(source, adId) {
+  const u = (URL_BUILDER && URL_BUILDER.utc) || {};
+  const dyn = (u.dynamicAdIdTokens || []).find(function(d) { return d.token === adId; });
+  const fam = dyn ? dyn.platform : ((u.sourcePlatform || {})[source] || '');
+  return { meta: 'Meta', tiktok: 'TikTok', google: 'YouTube' }[fam] || '';
 }
 
 /** Block banned characters at the keypress level. */
@@ -3320,7 +3369,8 @@ function readUrlBuilderInput_() {
       hotel:         (document.getElementById('url_hotel')        || {}).value || '',
       creativeType:  (document.getElementById('url_creativeType') || {}).value || '',
       assetVersion:  (document.getElementById('url_assetVersion') || {}).value || '',
-      adId:          (document.getElementById('url_adId')         || {}).value || ''
+      adId:          (document.getElementById('url_adIdMode')     || {}).value ||
+                     (document.getElementById('url_adId')         || {}).value || ''
     };
   }
   return {
@@ -3334,12 +3384,20 @@ function runUrlBuild() {
   const brand = (document.getElementById('url_brand') || {}).value || '';
   if (!brand) { setStatus('url-status', '<span class="fail">Pick a brand first</span>'); return; }
 
-  // Determine mode (only product brands have the mode picker; UTC is always single)
+  // Determine mode (NCA has none and is always single)
   const modeRadio = document.querySelector('input[name="url-mode"]:checked');
   const mode = (modeRadio && modeRadio.value) || 'single';
 
   let inputs = [];
-  if (brand !== 'Unique Vacations Inc.' && mode === 'bulk') {
+  if (brand === 'Unique Vacations Inc.' && mode === 'bulk') {
+    if (!URL_UVI_BULK_ROWS || URL_UVI_BULK_ROWS.length === 0) {
+      setStatus('url-status', '<span class="fail">Upload a filled UVI bulk template first.</span>');
+      return;
+    }
+    inputs = URL_UVI_BULK_ROWS.map(function(r) {
+      return Object.assign({ brand: brand, platform: uviRowPlatform_(r.source, r.adId) }, r);
+    });
+  } else if (brand !== 'Unique Vacations Inc.' && mode === 'bulk') {
     if (!URL_BULK_ROWS || URL_BULK_ROWS.length === 0) {
       setStatus('url-status', '<span class="fail">No URLs loaded. Paste URLs and click "Load URLs into editable list", or add rows manually.</span>');
       return;
@@ -3354,6 +3412,7 @@ function runUrlBuild() {
   } else {
     const input = readUrlBuilderInput_();
     if (!input) { setStatus('url-status', '<span class="fail">Pick a brand first</span>'); return; }
+    if (brand === 'Unique Vacations Inc.') input.platform = uviRowPlatform_(input.source, input.adId);
     if (!input.destinationUrl) { setStatus('url-status', '<span class="fail">Destination URL is required</span>'); return; }
     inputs = [input];
   }
@@ -3388,6 +3447,108 @@ function runUrlBuild() {
     .runUrlBuilder(inputs);
 }
 
+
+// ---- UVI bulk sheet -------------------------------------------------------
+// Column order is the contract with the Claude prompt in
+// docs/uvi-utm-bulk-template.md — change both together.
+const UVI_BULK_COLUMNS = [
+  { key: 'platformCampaignId', header: 'Platform Campaign ID' },
+  { key: 'platformAdSetId',    header: 'Platform Ad Set ID' },
+  { key: 'platformAdId',       header: 'Platform Ad ID' },
+  { key: 'adName',             header: 'Ad Name' },
+  { key: 'destinationUrl',     header: 'Destination URL',   required: true },
+  { key: 'source',             header: 'UTM Source',        required: true },
+  { key: 'campaign',           header: 'Campaign Name',     required: true },
+  { key: 'geo',                header: 'Geo',               required: true },
+  { key: 'objective',          header: 'Objective',         required: true },
+  { key: 'influencer',         header: 'Influencer Handle', required: true },
+  { key: 'hotel',              header: 'Hotel Code',        required: true },
+  { key: 'creativeType',       header: 'Creative Type',     required: true },
+  { key: 'assetVersion',       header: 'Asset Version',     required: true },
+  { key: 'adId',               header: 'UTM Ad ID',         required: true }
+];
+let URL_UVI_BULK_ROWS = [];
+
+function downloadUviBulkTemplate() {
+  const header = UVI_BULK_COLUMNS.map(function(c) { return c.header; });
+  const sample = ['cg:52514722513398', 'c:52514734465198', 'a:52514734464598',
+    'R#:17 | NA | Boosted | Influencer Carousel | 1x1 | NA | BC: Quality time with | CTA: Book Now | LP: Owned ~ Beaches Turks Caicos | 07/10/26 | 10/31/26 | mccall.mitchell | NA',
+    'https://www.beaches.com/resorts/turks-caicos/', 'facebookinstagram', 'Beaches Always On', 'midwest', 'Traffic',
+    'mccall.mitchell lookalike', 'BTC', 'influencercarousel', '1', '{{ad.id}}'];
+  const csv = [header, sample].map(function(row) { return row.map(csvField).join(','); }).join('\n');
+  downloadCsv('uvi-utm-bulk-template.csv', csv);
+  setStatus('url-status', '<span class="pass">Template downloaded</span> — one row per ad; delete the sample row before uploading.');
+}
+
+function handleUviBulkFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('url_uvi_bulk_status');
+  status.textContent = 'Reading ' + file.name + '…';
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let rows;
+      if (ext === 'xlsx' || ext === 'xls') {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        // raw:false keeps long IDs as the text Excel shows, not rounded numbers
+        rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: false });
+      } else {
+        rows = parseCsvSimple(String(e.target.result || '').replace(/^﻿/, ''));
+      }
+      const parsed = parseUviBulkRows_(rows);
+      URL_UVI_BULK_ROWS = parsed.rows;
+      status.innerHTML = parsed.error
+        ? '<span class="fail">' + escapeHtml(parsed.error) + '</span>'
+        : '<span class="pass">Loaded ' + parsed.rows.length + ' row' + (parsed.rows.length === 1 ? '' : 's') + ' from ' + escapeHtml(file.name) + '.</span>' +
+          (parsed.warnings.length ? ' <span class="fail">' + escapeHtml(parsed.warnings.join(' · ')) + '</span>' : '') +
+          ' Click <strong>Build URL</strong>.';
+    } catch (err) {
+      URL_UVI_BULK_ROWS = [];
+      status.innerHTML = '<span class="fail">Failed to read file: ' + escapeHtml(err.message || err) + '</span>';
+    }
+  };
+  if (ext === 'xlsx' || ext === 'xls') reader.readAsArrayBuffer(file); else reader.readAsText(file);
+}
+
+/** Header-matched (case/space-insensitive), so column order in the upload doesn't matter. */
+function parseUviBulkRows_(rows) {
+  const norm = function(h) { return String(h || '').toLowerCase().replace(/[^a-z0-9]/g, ''); };
+  if (!rows || rows.length < 2) return { rows: [], warnings: [], error: 'The sheet has no data rows.' };
+  const header = rows[0].map(norm);
+  const idx = {};
+  UVI_BULK_COLUMNS.forEach(function(c) { idx[c.key] = header.indexOf(norm(c.header)); });
+  const missing = UVI_BULK_COLUMNS.filter(function(c) { return c.required && idx[c.key] === -1; }).map(function(c) { return c.header; });
+  if (missing.length) return { rows: [], warnings: [], error: 'Missing required column' + (missing.length === 1 ? '' : 's') + ': ' + missing.join(', ') + '. Download the UVI bulk template for the expected headers.' };
+  const out = [];
+  let blankCells = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i] || [];
+    const row = {};
+    UVI_BULK_COLUMNS.forEach(function(c) { row[c.key] = idx[c.key] === -1 ? '' : String(r[idx[c.key]] == null ? '' : r[idx[c.key]]).trim(); });
+    if (!row.destinationUrl && !row.platformAdId && !row.adName) continue;   // empty line
+    if (String(row.platformCampaignId || row.destinationUrl).indexOf('#') === 0) continue;   // comment line
+    UVI_BULK_COLUMNS.forEach(function(c) { if (c.required && !row[c.key]) blankCells++; });
+    out.push(row);
+  }
+  const warnings = [];
+  if (blankCells) warnings.push(blankCells + ' required cell' + (blankCells === 1 ? ' is' : 's are') + ' blank — those rows will show an error');
+  return { rows: out, warnings: warnings, error: out.length ? '' : 'No data rows found under the header.' };
+}
+
+/** Meta bulk-import file: re-points each existing ad at the clean URL + URL Tags. */
+function downloadMetaReimportCsv() {
+  const rows = (urlLastResults || []).filter(function(r) { return r.ok && r.input && r.input.platformAdId && r.input.platform === 'Meta'; });
+  if (rows.length === 0) { setStatus('url-status', '<span class="fail">No built Meta rows with a Platform Ad ID to re-import.</span>'); return; }
+  const header = ['Campaign ID', 'Ad Set ID', 'Ad ID', 'Link', 'URL Tags'];
+  const body = rows.map(function(r) {
+    return [r.input.platformCampaignId || '', r.input.platformAdSetId || '', r.input.platformAdId,
+            r.input.destinationUrl, String(r.utmString || '').replace(/^\?/, '')];
+  });
+  downloadCsv('meta-url-tags-import-' + timestamp() + '.csv', [header].concat(body).map(function(row) { return row.map(csvField).join(','); }).join('\n'));
+  setStatus('url-status', '<span class="pass">Downloaded Meta import file with ' + body.length + ' ad' + (body.length === 1 ? '' : 's') + '.</span> Import it in Ads Manager → Export &amp; import → Import ads in bulk. Try one ad first.');
+}
 
 function renderUrlResults() {
   const wrap = document.getElementById('url-results');
@@ -3446,13 +3607,21 @@ function renderUrlResults() {
 
   // ---- Build the table rows ----
   const showInstrCol = !singlePlatform && uniquePlatforms.length > 1;
-  const totalCols = showInstrCol ? 12 : 11;
+  const showAdCol = urlLastResults.some(function(r) { return r && r.input && (r.input.adName || r.input.platformAdId); });
+  const showMetaImport = urlLastResults.some(function(r) { return r && r.ok && r.input && r.input.platformAdId && r.input.platform === 'Meta'; });
+  const totalCols = (showInstrCol ? 12 : 11) + (showAdCol ? 1 : 0);
+  const adCell = function(r) {
+    if (!showAdCol) return '';
+    const inp = r.input || {};
+    return '<td title="' + escapeAttr(inp.adName || '') + '">' + escapeHtml(inp.platformAdId || (inp.adName || '').slice(0, 24) || '—') + '</td>';
+  };
 
   const rowsHtml = urlLastResults.map(function(r, i) {
     if (!r.ok) {
       return '<tr>' +
                '<td>' + (i + 1) + '</td>' +
-               '<td class="col-error" colspan="' + (totalCols - 1) + '">ERROR — ' + escapeHtml(r.error || 'unknown error') + '</td>' +
+               adCell(r) +
+               '<td class="col-error" colspan="' + (totalCols - 1 - (showAdCol ? 1 : 0)) + '">ERROR — ' + escapeHtml(r.error || 'unknown error') + '</td>' +
              '</tr>';
     }
     const b = r.breakout || {};
@@ -3470,6 +3639,7 @@ function renderUrlResults() {
       : '';
     return '<tr>' +
              '<td>' + (i + 1) + '</td>' +
+             adCell(r) +
              '<td>' + escapeHtml(r.fullUrl) + '</td>' +
              '<td>' + escapeHtml(stripLeadingQ(r.utmString)) + '</td>' +
              platformCell +
@@ -3487,6 +3657,7 @@ function renderUrlResults() {
   const headerRow =
     '<thead><tr>' +
       '<th>#</th>' +
+      (showAdCol ? '<th>Ad</th>' : '') +
       '<th>Full URL</th>' +
       '<th>UTM String</th>' +
       '<th>Platform</th>' +
@@ -3512,6 +3683,7 @@ function renderUrlResults() {
       '<button type="button" class="btn" onclick="copyUrlBuilderAll()">Copy all URLs</button>' +
       '<button type="button" class="btn accent" onclick="exportUrlBuilderToNewFile()">Export to new Google Sheet</button>' +
       '<button type="button" class="btn secondary" onclick="downloadUrlBuilderCsv()">Download CSV</button>' +
+      (showMetaImport ? '<button type="button" class="btn secondary" onclick="downloadMetaReimportCsv()">Download Meta bulk-import file</button>' : '') +
     '</div>';
   wrap.innerHTML = table;
 }
@@ -3554,7 +3726,8 @@ function downloadUrlBuilderCsv() {
   });
   const uniquePlatforms = Object.keys(platformsSeen);
 
-  const header = ['Full URL', 'UTM String', 'Platform', 'Implementation Instructions', 'Source', 'Medium', 'Campaign', 'Term', 'Content', 'Liveness', 'Status Code', 'Error / Reason'];
+  const header = ['Full URL', 'UTM String', 'Platform', 'Implementation Instructions', 'Source', 'Medium', 'Campaign', 'Term', 'Content', 'Liveness', 'Status Code', 'Error / Reason',
+                  'Platform Campaign ID', 'Platform Ad Set ID', 'Platform Ad ID', 'Ad Name'];
   const rows = urlLastResults.map(function(r) {
     const b = r.breakout || {};
     const live = r.liveness || {};
@@ -3568,7 +3741,9 @@ function downloadUrlBuilderCsv() {
       b.source || '', b.medium || '', b.campaign || '', b.term || '', b.content || '',
       r.error ? '' : (live.alive ? 'LIVE' : 'DEAD'),
       r.error ? '' : String(live.code || ''),
-      r.error || (live.alive ? '' : (live.reason || ''))
+      r.error || (live.alive ? '' : (live.reason || '')),
+      (r.input && r.input.platformCampaignId) || '', (r.input && r.input.platformAdSetId) || '',
+      (r.input && r.input.platformAdId) || '', (r.input && r.input.adName) || ''
     ];
   });
 
@@ -3601,6 +3776,7 @@ function clearUrlBuilder() {
   if (hint) hint.textContent = '';
   urlLastResults = null;
   URL_BULK_ROWS = [];
+  URL_UVI_BULK_ROWS = [];
 }
 
 // ============================================================

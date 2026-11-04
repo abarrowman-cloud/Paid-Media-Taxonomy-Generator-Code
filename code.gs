@@ -2099,8 +2099,10 @@ const URL_BUILDER_BRAND_TEMPLATES = {
  */
 const URL_BUILDER_PLATFORM_TEMPLATES = {
   'Meta':              '?utm_source=meta&utm_medium=paid_social&utm_campaign={{campaign.id}}&utm_content={{ad.id}}&utm_term={{adset.id}}',
-  'TikTok (Smart+)':   '?utm_source=tiktok&utm_campaign=__CAMPAIGN_ID__&utm_medium=paid_social&utm_content=__ADID_V2__',
-  'TikTok (Standard)': '?utm_source=tiktok&utm_medium=paid_social&utm_content=__AID__&utm_campaign=__CAMPAIGN_ID__',
+  // TikTok defaults to (upgraded) Smart+ campaigns, so there is one TikTok
+  // template on the Smart+ macros. The old Standard template used __AID__,
+  // which TikTok fills with the AD GROUP id, not the ad id.
+  'TikTok':            '?utm_source=tiktok&utm_campaign=__CAMPAIGN_ID__&utm_medium=paid_social&utm_content=__ADID_V2__',
   'YouTube':           '?utm_source=google&utm_medium=paid_social&utm_campaign={campaignid}&utm_content={creative}&utm_term={adgroupid}',
   // Pinterest dynamic tracking macros (curly-brace style, like Google/YouTube).
   // {campaignid} and {adid} (Pin promotion ID) are filled by Pinterest at serve
@@ -2130,13 +2132,7 @@ const URL_BUILDER_PLATFORM_INSTRUCTIONS = {
     full:   "Add 'UTM String' — column B — directly to the Tracking > URL Parameters field for each ad driving to this destination URL. This field is typically located at the end of the ad details.",
     screenshotUrl: 'https://drive.google.com/thumbnail?id=1Ihe8VcNIs9yae24H6Ho0J5HFZFhWl2mw&sz=w1600'
   },
-  'TikTok (Smart+)': {
-    column: 'Full URL',
-    short:  "Paste the Full URL (column A) into TikTok's Destination URL field. Auto-detect: OFF.",
-    full:   "Add 'Full URL' — column A — directly to the Destination URL for each ad driving to this destination URL. Once added, ensure all parameters append correctly by selecting 'edit' under 'Preview' in the UI. Ensure auto-detect is turned off!",
-    screenshotUrl: 'https://drive.google.com/thumbnail?id=1NUCLKg_6jnfwOZKaHM39wCub8TjbMfQT&sz=w1600'
-  },
-  'TikTok (Standard)': {
+  'TikTok': {
     column: 'Full URL',
     short:  "Paste the Full URL (column A) into TikTok's Destination URL field. Auto-detect: OFF.",
     full:   "Add 'Full URL' — column A — directly to the Destination URL for each ad driving to this destination URL. Once added, ensure all parameters append correctly by selecting 'edit' under 'Preview' in the UI. Ensure auto-detect is turned off!",
@@ -2162,7 +2158,7 @@ const URL_BUILDER_PLATFORM_INSTRUCTIONS = {
  */
 const URL_BUILDER_SOURCE_TO_PLATFORM = {
   'meta':   ['Meta'],
-  'tiktok': ['TikTok (Smart+)', 'TikTok (Standard)'],
+  'tiktok': ['TikTok'],
   'google': ['YouTube'],
   'pinterest': ['Pinterest']
 };
@@ -2185,9 +2181,57 @@ const URL_BUILDER_UTC_CONFIG = {
   sourceOptions:       ['facebookinstagram', 'facebook', 'instagram', 'tiktok', 'google', 'na'],
   geoOptions:          ['usa', 'can', 'usacan', 'na', 'northeast', 'south', 'midwest', 'west'],
   objectiveOptions:    ['Awareness', 'Video Views', 'Traffic', 'Engagement', 'App Promotion', 'Lead Generation', 'Conversions', 'Sales'],
-  hotelOptions:        ['SSV', 'SND', 'BTC', 'SRB', 'SLU', 'SNG', 'SDR', 'SCR'],
-  creativeTypeOptions: ['video', 'carousel', 'static']
+  // SGO (Sandals Ochi) and the influencer* creative types are what live UVI ads
+  // already carry (Meta export 2026-11-03) — listed so URL QA stops failing them.
+  hotelOptions:        ['SSV', 'SND', 'BTC', 'SRB', 'SLU', 'SNG', 'SDR', 'SCR', 'SGO'],
+  creativeTypeOptions: ['video', 'carousel', 'static', 'influencervideo', 'influencercarousel'],
+
+  // Utm_source value → ad platform family. Picks the valid dynamic Ad ID
+  // tokens and the dynamic platform + placement tail for a row.
+  sourcePlatform: {
+    'facebookinstagram': 'meta', 'facebook': 'meta', 'instagram': 'meta',
+    'tiktok': 'tiktok', 'google': 'google', 'na': ''
+  },
+
+  // Dynamic Ad ID tokens for segment 10. The ad platform swaps the token for the
+  // real ad ID at click time, so the URL can be built BEFORE the ad exists —
+  // no export → copy ID → rebuild → re-upload loop. Kept verbatim (never
+  // sanitized: the sanitizer would strip TikTok's underscores).
+  // TikTok: Smart+ only (TikTok's default). __AID__ is the AD GROUP id — never use it here.
+  dynamicAdIdTokens: [
+    { token: '{{ad.id}}',   platform: 'meta',   label: 'Meta — {{ad.id}}' },
+    { token: '__ADID_V2__', platform: 'tiktok', label: 'TikTok — __ADID_V2__' },
+    { token: '{creative}',  platform: 'google', label: 'Google / YouTube — {creative}' }
+  ],
+
+  // Segments 11–12 of utm_campaign: platform + placement, filled by the ad
+  // platform at click time so ad sets never have to be split to report them.
+  // They go AFTER the ad ID: Meta's placement values contain "_" (e.g.
+  // instagram_stories), so anything reading the composite takes segments
+  // 1–10 by position, 11 = platform, and 12-onward re-joined = placement.
+  // GA4 only receives source / medium / campaign for these sessions, which is
+  // why this lives in utm_campaign and not utm_content / utm_term.
+  // Sources with no entry here (google, na) keep the 10-segment string.
+  dynamicTail: {
+    meta:   ['{{site_source_name}}', '{{placement}}'],   // fb|ig|msg|an|th; placement is Meta free text, e.g. Facebook_Desktop_Feed
+    tiktok: ['tiktok', '__PLACEMENT__']                   // TikTok has no app-level macro besides placement
+  },
+  platformSegmentValues: ['fb', 'ig', 'msg', 'an', 'th', 'tiktok']
 };
+
+/** Platform family for a UVI utm_source ('' when unknown / na). */
+function uviSourcePlatform_(source) {
+  const map = URL_BUILDER_UTC_CONFIG.sourcePlatform;
+  return Object.prototype.hasOwnProperty.call(map, source) ? map[source] : '';
+}
+
+/** The dynamic Ad ID entry for a token, or null when the value is a literal ID. */
+function uviDynamicAdId_(value) {
+  const v = String(value == null ? '' : value).trim();
+  const list = URL_BUILDER_UTC_CONFIG.dynamicAdIdTokens;
+  for (let i = 0; i < list.length; i++) if (list[i].token === v) return list[i];
+  return null;
+}
 
 /** Regex of characters stripped from every composite segment before joining. */
 const URL_BUILDER_STRIP_REGEX = /[-_~ ()+=\[\],<>&?]/g;
@@ -2252,6 +2296,18 @@ function buildUtmUrl(params) {
     const objective = String(params.objective || '').trim();
     const funnel = URL_BUILDER_UTC_CONFIG.funnelMap[objective];
     if (!funnel) throw new Error('Objective "' + objective + '" has no mapped funnel level. Pick one of: ' + Object.keys(URL_BUILDER_UTC_CONFIG.funnelMap).join(', '));
+    const sourcePlatform = uviSourcePlatform_(source);
+
+    // Segment 10: a dynamic token passes through verbatim; a literal ID is sanitized.
+    const dynAdId = uviDynamicAdId_(params.adId);
+    if (dynAdId && sourcePlatform && dynAdId.platform !== sourcePlatform) {
+      throw new Error('Ad ID token ' + dynAdId.token + ' is for ' + dynAdId.platform + ', but UTM Source "' + source + '" is ' + sourcePlatform + '. Pick the token for the platform the ad runs on.');
+    }
+    const adIdSegment = dynAdId ? dynAdId.token : urlBuilderSanitize_(params.adId);
+
+    // Dynamic platform + placement tail (see dynamicTail). includeDynamicTail:false
+    // rebuilds a legacy 10-segment string, e.g. to match an ad already live.
+    const tail = (params.includeDynamicTail === false) ? [] : (URL_BUILDER_UTC_CONFIG.dynamicTail[sourcePlatform] || []);
 
     const campaignStr = [
       URL_BUILDER_UTC_CONFIG.campaignPrefix,
@@ -2263,8 +2319,8 @@ function buildUtmUrl(params) {
       urlBuilderSanitize_(params.hotel),
       urlBuilderSanitize_(params.creativeType),
       urlBuilderSanitize_(params.assetVersion),
-      urlBuilderSanitize_(params.adId)
-    ].join('_');
+      adIdSegment
+    ].concat(tail).join('_');
 
     utmString = '?utm_source=' + source + '&utm_medium=' + URL_BUILDER_UTC_CONFIG.medium + '&utm_campaign=' + campaignStr;
     breakout.source   = source;
@@ -2372,12 +2428,14 @@ function runUrlBuilder(inputsArray) {
     }
   });
 
-  // Check destination liveness in parallel for every successful build
-  const okResults = results.filter(function(r) { return r.ok; });
-  const liveness = checkUrlsLive_(okResults.map(function(r) { return r.fullUrl; }));
-  let j = 0;
+  // Check destination liveness in parallel, once per distinct destination —
+  // a bulk sheet has hundreds of ads pointing at a handful of pages.
+  const destOf = function(r) { return String(r.fullUrl || '').split('?')[0]; };
+  const dests = [];
+  results.forEach(function(r) { if (r.ok && dests.indexOf(destOf(r)) === -1) dests.push(destOf(r)); });
+  const liveness = checkUrlsLive_(dests);
   results.forEach(function(r) {
-    if (r.ok) { r.liveness = liveness[j++]; }
+    if (r.ok) r.liveness = liveness[dests.indexOf(destOf(r))];
   });
 
   return { ok: true, results: results };
@@ -2395,7 +2453,10 @@ function exportUrlBuilderToNewSheet(results) {
   const ss = SpreadsheetApp.create(title);
   const sheet = ss.getActiveSheet();
   sheet.setName('URL Builder');
-  const header = ['Full URL', 'UTM String', 'Platform', 'Implementation Instructions', 'Source', 'Medium', 'Campaign', 'Term', 'Content', 'Liveness', 'Status Code', 'Error / Reason'];
+  // Bulk-sheet rows carry the platform IDs through so the output can be matched
+  // back to (and re-imported against) the ads it was built for.
+  const header = ['Full URL', 'UTM String', 'Platform', 'Implementation Instructions', 'Source', 'Medium', 'Campaign', 'Term', 'Content', 'Liveness', 'Status Code', 'Error / Reason',
+                  'Platform Campaign ID', 'Platform Ad Set ID', 'Platform Ad ID', 'Ad Name'];
   sheet.getRange(1, 1, 1, header.length)
        .setValues([header])
        .setFontWeight('bold')
@@ -2421,9 +2482,15 @@ function exportUrlBuilderToNewSheet(results) {
       b.content || '',
       r.error ? '' : (live.alive ? 'LIVE' : 'DEAD'),
       r.error ? '' : String(live.code || ''),
-      r.error || (live.alive ? '' : (live.reason || ''))
+      r.error || (live.alive ? '' : (live.reason || '')),
+      (r.input && r.input.platformCampaignId) || '',
+      (r.input && r.input.platformAdSetId) || '',
+      (r.input && r.input.platformAdId) || '',
+      (r.input && r.input.adName) || ''
     ];
   });
+  // Plain text: 17+ digit platform IDs lose precision if Sheets reads them as numbers.
+  sheet.getRange(2, 13, rows.length, 3).setNumberFormat('@');
   sheet.getRange(2, 1, rows.length, header.length).setValues(rows);
   // Wrap the long instruction text
   sheet.getRange(2, 4, rows.length, 1).setWrap(true).setVerticalAlignment('top');
@@ -2548,9 +2615,29 @@ function qaUtmUrlAgainstUtc_(params) {
   if (!camp) {
     issues.push('Missing utm_campaign');
   } else {
-    const tokens = camp.split('_');
+    // Dynamic tokens can contain "_" (__ADID_V2__, __PLACEMENT__) and Meta's
+    // filled-in placement does too (instagram_stories), so: mask tokens, split,
+    // then fold everything past segment 12 back into the placement.
+    const dynTokens = cfg.dynamicAdIdTokens.map(function(d) { return d.token; })
+      .concat(cfg.dynamicTail.meta, cfg.dynamicTail.tiktok)
+      .filter(function(t) { return /[{_]/.test(t) && t !== 'tiktok'; });
+    let masked = camp;
+    dynTokens.forEach(function(t, k) { masked = masked.split(t).join('\u0000' + k + '\u0000'); });
+    let tokens = masked.split('_').map(function(seg) {
+      return seg.replace(/\u0000(\d+)\u0000/g, function(m, k) { return dynTokens[+k]; });
+    });
+    if (tokens.length > 12) tokens = tokens.slice(0, 11).concat([tokens.slice(11).join('_')]);
+    const hasTail = tokens.length === 12;
+    if (hasTail) {
+      const platformSeg = tokens[10], placementSeg = tokens[11];
+      if (cfg.platformSegmentValues.indexOf(platformSeg) === -1 && cfg.dynamicTail.meta.indexOf(platformSeg) === -1) {
+        issues.push('utm_campaign segment 11 (platform) = "' + platformSeg + '" — expected one of: ' + cfg.platformSegmentValues.join(', ') + ' or ' + cfg.dynamicTail.meta[0]);
+      }
+      if (!placementSeg) issues.push('utm_campaign segment 12 (placement) is empty');
+      tokens = tokens.slice(0, 10);
+    }
     if (tokens.length !== 10) {
-      issues.push('utm_campaign must have exactly 10 underscore-separated segments — got ' + tokens.length + '. Format: viralnation_<funnel>_<campaign>_<geo>_<objective>_<influencer>_<hotel>_<creativeType>_<assetVersion>_<adId>');
+      issues.push('utm_campaign must have 10 underscore-separated segments, or 12 with the platform + placement tail — got ' + tokens.length + '. Format: viralnation_<funnel>_<campaign>_<geo>_<objective>_<influencer>_<hotel>_<creativeType>_<assetVersion>_<adId>[_<platform>_<placement>]');
     } else {
       const prefix       = tokens[0];
       const funnel       = tokens[1];
@@ -2603,15 +2690,27 @@ function qaUtmUrlAgainstUtc_(params) {
       }
       if (!adId) {
         issues.push('utm_campaign segment 10 (ad ID) is empty');
+      } else {
+        const dyn = uviDynamicAdId_(adId);
+        const srcPlatform = uviSourcePlatform_(src);
+        if (dyn && srcPlatform && dyn.platform !== srcPlatform) {
+          issues.push('utm_campaign segment 10 (ad ID) = "' + adId + '" — ' + dyn.platform + ' token on a ' + srcPlatform + ' URL; the platform will not fill it');
+        }
       }
     }
   }
 
-  // utm_content / utm_term are NOT used by UTC — flag any presence
-  if (params.utm_content) {
-    issues.push('Unexpected utm_content = "' + params.utm_content + '" — Unique Vacations Inc. URLs do not use utm_content');
+  // utm_content / utm_term are NOT used by UTC — flag any we put there. A URL
+  // copied from a real click (fbclid / ad_id present) also carries the IDs Meta
+  // appends on its own (utm_content = ad, utm_term = ad set); those are not ours.
+  const other = params._other || {};
+  const metaAppended = function(v) {
+    return (other.fbclid !== undefined || other.ad_id !== undefined) && /^\d+$/.test(String(v));
+  };
+  if (params.utm_content && !metaAppended(params.utm_content)) {
+    issues.push('Unexpected utm_content = "' + params.utm_content + '" — Unique Vacations Inc. URLs carry placement in utm_campaign segment 12');
   }
-  if (params.utm_term) {
+  if (params.utm_term && !metaAppended(params.utm_term)) {
     issues.push('Unexpected utm_term = "' + params.utm_term + '" — Unique Vacations Inc. URLs do not use utm_term');
   }
   return issues;
@@ -2657,8 +2756,6 @@ function qaUtmUrls(urls, brand, expectedPlatform) {
     }
     expected = templateExpectedParams_(platformKey);
   }
-  // Reverse-lookup the expected utm_source values that match this platform
-  // (TikTok Smart+ and TikTok Standard both have utm_source=tiktok).
   const expectedSource = (expected && expected.utm_source) || '';
   const qaLabel = platformKey || brandKey;
 
