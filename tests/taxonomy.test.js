@@ -274,6 +274,41 @@ const uviQa = qaUtmUrls(uviQaCases.map((c) => c[1]), 'Unique Vacations Inc.', ''
 uviQaCases.forEach((c, k) => eq('UVI QA ' + c[0], uviQa[k].status, c[2]));
 
 // =====================================================================
+// F. Page routing — one Google Sites page per tool
+//
+// Each Sites page embeds `<exec URL>?page=<id>`. An unknown or missing page
+// must fall back to the Generator with the full tabbed UI (pageExplicit
+// 'false'), so the original /home embed keeps working unchanged.
+// =====================================================================
+function fakeDoGet(params) {
+  const seen = {};
+  const chain = { setTitle(x) { seen.title = x; return chain; }, addMetaTag() { return chain; }, setXFrameOptionsMode() { return chain; } };
+  globalThis.HtmlService = {
+    XFrameOptionsMode: { ALLOWALL: 'ALLOWALL' },
+    createTemplateFromFile(name) { seen.file = name; const tpl = { evaluate() { seen.initialPage = tpl.initialPage; seen.pageExplicit = tpl.pageExplicit; return chain; } }; return tpl; }
+  };
+  doGet({ parameter: params || {} });
+  return seen;
+}
+Object.keys(GENERATOR_PAGES).forEach(function (id) {
+  const r = fakeDoGet({ page: id });
+  eq('doGet ?page=' + id + ' opens that tab', r.initialPage, id);
+  eq('doGet ?page=' + id + ' marked explicit', r.pageExplicit, 'true');
+  eq('doGet ?page=' + id + ' titles the page', r.title, GENERATOR_PAGES[id] + ' · Taxonomy Tools');
+});
+eq('doGet serves the Index template', fakeDoGet({ page: 'url' }).file, 'Index');
+eq('doGet no page -> Generator', fakeDoGet({}).initialPage, 'gen');
+eq('doGet no page -> full tabbed UI', fakeDoGet({}).pageExplicit, 'false');
+eq('doGet unknown page -> Generator', fakeDoGet({ page: 'home' }).initialPage, 'gen');
+eq('doGet unknown page -> full tabbed UI', fakeDoGet({ page: '<script>' }).pageExplicit, 'false');
+eq('doGet no page keeps original title', fakeDoGet({}).title, 'Taxonomy Tools');
+// Every routable page id must have a panel in the UI, and vice versa.
+const ui = fs.readFileSync(path.join(__dirname, '..', 'Index.html'), 'utf8');
+const panelIds = (ui.match(/id="panel-([a-z]+)"/g) || []).map((m) => m.slice(10, -1)).sort().join(',');
+eq('GENERATOR_PAGES matches the UI panels', Object.keys(GENERATOR_PAGES).sort().join(','), panelIds);
+eq('Index.html has no stray template markers', (ui.match(/<\?/g) || []).length, 2);
+
+// =====================================================================
 // C. Apps Script runtime compatibility
 //
 // code.gs runs on Apps Script's V8, NOT on Node. Node accepts syntax that

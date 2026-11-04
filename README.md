@@ -66,6 +66,26 @@ Don't leave the folder parked on a feature branch after that branch merges. A me
 | `docs/uvi-utm-bulk-template.md` | UVI bulk UTM flow: template columns, dynamic Ad ID tokens, placement values, and the prompt the team pastes into Claude.ai with a Meta export |
 | `templates/uvi-utm-bulk-template.csv` | Empty UVI bulk template (also downloadable from the UTM Builder) |
 
+## One Google Sites page per tool
+
+The web app is one deployment; `doGet` reads `?page=` and opens that tab. Each Sites page embeds
+the same `/exec` URL with its own `page`, which gives every tool a shareable link and working
+Back / Forward. Inside Sites, a page opened with `?page=` hides the in-app tab bar so the Sites menu
+is the only navigation. The bare `/exec` URL (and the original `/home` embed) keeps the full
+tabbed UI, so existing links don't break.
+
+| Sites menu group | Sites page | Embed URL |
+|---|---|---|
+| Platform Taxonomy Tools | Generator | `<exec URL>?page=gen` |
+| Platform Taxonomy Tools | Extractor & Editor | `<exec URL>?page=ext` |
+| Platform Taxonomy Tools | Taxonomy QA | `<exec URL>?page=qa` |
+| UTM Tools | UTM Builder | `<exec URL>?page=url` |
+| UTM Tools | URL QA | `<exec URL>?page=urlqa` |
+
+The ids are `GENERATOR_PAGES` in `code.gs`; the test suite fails if they drift from the panels in
+`Index.html`. `Index.html` is served as a template, so **never write `<?` anywhere in it** (comments
+included) except the one line that injects the page. The suite counts them.
+
 ## UVI UTM Builder: dynamic Ad ID, platform and placement
 
 - **Ad ID (segment 10)** can be a platform token instead of a typed ID: `{{ad.id}}` (Meta),

@@ -984,6 +984,8 @@
 
 <!-- SheetJS for XLSX upload parsing -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Filled by doGet (code.gs). Outside Apps Script the placeholders stay unrendered and the page falls back to the Generator. -->
+<script>window.__INITIAL_PAGE__ = "<?= initialPage ?>"; window.__PAGE_EXPLICIT__ = "<?= pageExplicit ?>";</script>
 
 <script>
 // ============================================================
@@ -1005,14 +1007,52 @@ let _currentRenderedGenLevel = null;  // tracks which level's fields are current
 // ============================================================
 // BOOT
 // ============================================================
+function showTab(id) {
+  const tab = document.querySelector('.tab[data-tab="' + id + '"]');
+  const panel = document.getElementById('panel-' + id);
+  if (!tab || !panel) return;
+  document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(x){ x.classList.remove('active'); });
+  tab.classList.add('active');
+  panel.classList.add('active');
+}
 document.querySelectorAll('.tab').forEach(function(t) {
-  t.addEventListener('click', function() {
-    document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('active'); });
-    document.querySelectorAll('.panel').forEach(function(x){ x.classList.remove('active'); });
-    t.classList.add('active');
-    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
-  });
+  t.addEventListener('click', function() { showTab(t.dataset.tab); });
 });
+
+// ---- Page routing: one Google Sites page per tool -------------------------
+// Each Sites page embeds `<exec URL>?page=<id>` (see GENERATOR_PAGES in code.gs).
+// The requested tab opens on load; inside Sites the in-app tab bar is hidden so
+// the Sites menu is the only navigation. A page opened with no ?page= (the
+// original /home embed, or the bare /exec URL) keeps the full tabbed UI.
+function injectedValue_(v) {
+  v = String(v || '');
+  return v.indexOf('<' + '?') === -1 ? v : '';   // unrendered template = opened outside Apps Script
+}
+function requestedPage_() {
+  const fromQuery = new URLSearchParams(window.location.search).get('page');
+  if (fromQuery && document.getElementById('panel-' + fromQuery)) return { id: fromQuery, explicit: true };
+  const injected = injectedValue_(window.__INITIAL_PAGE__);
+  if (injected && document.getElementById('panel-' + injected)) {
+    return { id: injected, explicit: injectedValue_(window.__PAGE_EXPLICIT__) === 'true' };
+  }
+  return { id: 'gen', explicit: false };
+}
+function isEmbeddedInGoogleSites_() {
+  const origins = window.location.ancestorOrigins || [];
+  for (let i = 0; i < origins.length; i++) {
+    if (String(origins[i]).indexOf('https://sites.google.com') === 0) return true;
+  }
+  return String(document.referrer || '').indexOf('https://sites.google.com') === 0;
+}
+(function routeToRequestedPage_() {
+  const req = requestedPage_();
+  showTab(req.id);
+  if (req.explicit && isEmbeddedInGoogleSites_()) {
+    const bar = document.querySelector('.tab-groups');
+    if (bar) bar.style.display = 'none';
+  }
+})();
 document.querySelectorAll('input[name="gen-level"]').forEach(function(r) {
   r.addEventListener('change', function(e) {
     // The DOM still shows the OUTGOING level's fields (_currentRenderedGenLevel);

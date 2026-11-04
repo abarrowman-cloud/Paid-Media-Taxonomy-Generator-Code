@@ -185,9 +185,28 @@ function getDataSheetUrl() {
 // WEB APP ENTRY POINT
 // =========================================================================
 
+/**
+ * One web app, one Google Sites page per tool. Each Sites page embeds
+ * `<exec URL>?page=<id>`; the page opens on that tab and, inside Sites, hides
+ * the in-app tab bar so the Sites menu does the navigating. No `page` (the
+ * original /home embed) keeps the full tabbed UI.
+ */
+const GENERATOR_PAGES = {
+  gen:   'Generator',
+  ext:   'Extractor & Editor',
+  qa:    'Taxonomy QA',
+  url:   'UTM Builder',
+  urlqa: 'URL QA'
+};
+
 function doGet(e) {
-  return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('Taxonomy Tools')
+  const requested = String((e && e.parameter && e.parameter.page) || '');
+  const known = Object.prototype.hasOwnProperty.call(GENERATOR_PAGES, requested);
+  const t = HtmlService.createTemplateFromFile('Index');
+  t.initialPage = known ? requested : 'gen';
+  t.pageExplicit = known ? 'true' : 'false';
+  return t.evaluate()
+    .setTitle(known ? GENERATOR_PAGES[requested] + ' · Taxonomy Tools' : 'Taxonomy Tools')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
