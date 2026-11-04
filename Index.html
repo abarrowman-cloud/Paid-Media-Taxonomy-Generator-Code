@@ -337,7 +337,8 @@
     border-top: 1px solid var(--vn-line);
     margin-top: 20px;
   }
-  .form-actions .btn { margin-top: 0; }
+  .form-actions .btn { margin-top: 0; margin-right: 0; }
+  .form-actions .push-left { margin-right: auto; }
 
   /* ---------- Bulk edit change-row styling ---------- */
   .bulk-change-row {
@@ -826,7 +827,8 @@
   <div style="font-size: 12px; color: var(--vn-muted); font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 6px;">Input <span style="color:var(--vn-muted); text-transform:none; letter-spacing:0; font-weight:500;">(fields are numbered in output order)</span></div>
   <div id="gen-fields"></div>
   <div class="form-actions">
-    <button type="button" class="btn secondary" onclick="clearGenerator()">Clear Form</button>
+    <button type="button" class="btn secondary" onclick="clearInputs('gen')" title="Empty the form. Results stay.">Clear inputs</button>
+    <button type="button" class="btn secondary" onclick="clearResults('gen')" title="Empty the results. Your inputs stay.">Clear results</button>
     <button type="button" class="btn primary" onclick="runGenerate()">Generate</button>
   </div>
   <div class="status-bar" id="gen-status"></div>
@@ -848,8 +850,11 @@
     <label><input type="radio" name="ext-level" value="P2"> P2</label>
     <label><input type="radio" name="ext-level" value="P3"> P3</label>
   </div>
-  <button type="button" class="btn primary" onclick="runExtract()">Extract</button>
-  <button type="button" class="btn secondary" onclick="resetExtractor()">Reset Extractor</button>
+  <div class="form-actions">
+    <button type="button" class="btn secondary" onclick="clearInputs('ext')" title="Empty the form. Results stay.">Clear inputs</button>
+    <button type="button" class="btn secondary" onclick="clearResults('ext')" title="Empty the results. Your inputs stay.">Clear results</button>
+    <button type="button" class="btn primary" onclick="runExtract()">Extract</button>
+  </div>
   <div class="status-bar" id="ext-status"></div>
   <div id="ext-fields"></div>
   <div id="ext-rebuild-area" style="display:none; margin-top:14px;">
@@ -876,9 +881,10 @@
   <div id="bulk-changes"></div>
   <button type="button" class="btn secondary" onclick="addBulkChangeRow()">+ Add change</button>
 
-  <div style="margin-top:14px;">
+  <div class="form-actions">
+    <button type="button" class="btn secondary" onclick="clearInputs('bulk')" title="Empty the form. Results stay.">Clear inputs</button>
+    <button type="button" class="btn secondary" onclick="clearResults('bulk')" title="Empty the results. Your inputs stay.">Clear results</button>
     <button type="button" class="btn primary" onclick="runBulkEdit()">Apply bulk edit</button>
-    <button type="button" class="btn secondary" onclick="clearBulk()">Clear</button>
   </div>
   <div class="status-bar" id="bulk-status"></div>
   <div id="bulk-results"></div>
@@ -898,11 +904,12 @@
   <input type="file" id="qa-file" accept=".csv,.xlsx,.xls,.txt" onchange="handleQAFile(event)">
   <div class="hint" id="qa-file-status"></div>
 
-  <div style="margin-top:12px;">
-    <button type="button" class="btn primary" onclick="runQA()">Run QA</button>
-    <button type="button" class="btn secondary" onclick="clearQA()">Clear</button>
-    <button type="button" class="btn accent" onclick="exportQAToNewFile()" id="qa-export-btn" disabled>Export to new Google Sheet</button>
+  <div class="form-actions">
+    <button type="button" class="btn accent push-left" onclick="exportQAToNewFile()" id="qa-export-btn" disabled>Export to new Google Sheet</button>
     <button type="button" class="btn secondary" onclick="downloadQACsv()" id="qa-csv-btn" disabled>Download CSV</button>
+    <button type="button" class="btn secondary" onclick="clearInputs('qa')" title="Empty the form. Results stay.">Clear inputs</button>
+    <button type="button" class="btn secondary" onclick="clearResults('qa')" title="Empty the results. Your inputs stay.">Clear results</button>
+    <button type="button" class="btn primary" onclick="runQA()">Run QA</button>
   </div>
 
   <div class="status-bar" id="qa-status"></div>
@@ -930,7 +937,8 @@
   </div>
 
   <div class="form-actions">
-    <button type="button" class="btn secondary" onclick="clearUrlBuilder()">Clear</button>
+    <button type="button" class="btn secondary" onclick="clearInputs('url')" title="Empty the form. Results stay.">Clear inputs</button>
+    <button type="button" class="btn secondary" onclick="clearResults('url')" title="Empty the results. Your inputs stay.">Clear results</button>
     <button type="button" class="btn primary" onclick="runUrlBuild()">Build URL</button>
   </div>
 
@@ -968,11 +976,12 @@
   <input type="file" id="url-qa-file" accept=".csv,.xlsx,.xls,.txt" onchange="handleUrlQAFile(event)">
   <div class="hint" id="url-qa-file-status"></div>
 
-  <div style="margin-top:12px;">
-    <button type="button" class="btn primary" onclick="runUrlQA()">Run URL QA</button>
-    <button type="button" class="btn secondary" onclick="clearUrlQA()">Clear</button>
-    <button type="button" class="btn accent" onclick="exportUrlQAToNewFile()" id="url-qa-export-btn" disabled>Export to new Google Sheet</button>
+  <div class="form-actions">
+    <button type="button" class="btn accent push-left" onclick="exportUrlQAToNewFile()" id="url-qa-export-btn" disabled>Export to new Google Sheet</button>
     <button type="button" class="btn secondary" onclick="downloadUrlQACsv()" id="url-qa-csv-btn" disabled>Download CSV</button>
+    <button type="button" class="btn secondary" onclick="clearInputs('urlqa')" title="Empty the form. Results stay.">Clear inputs</button>
+    <button type="button" class="btn secondary" onclick="clearResults('urlqa')" title="Empty the results. Your inputs stay.">Clear results</button>
+    <button type="button" class="btn primary" onclick="runUrlQA()">Run URL QA</button>
   </div>
 
   <div class="status-bar" id="url-qa-status"></div>
@@ -1066,7 +1075,10 @@ document.querySelectorAll('input[name="gen-level"]').forEach(function(r) {
         }
       }
     } catch (err) { /* ignore */ }
+    if (_currentRenderedGenLevel) genFieldState[_currentRenderedGenLevel] = captureControls_(document.getElementById('gen-fields'));
     renderGeneratorFields();
+    restoreControls_(document.getElementById('gen-fields'), genFieldState[_currentRenderedGenLevel]);
+    scheduleStickySave_('gen');
   });
 });
 
@@ -1105,8 +1117,15 @@ function loadSpec(onLoaded) {
 }
 
 function refreshSpec() {
+  // Reloading the spec re-renders the forms and brand pickers; keep what was entered.
+  const genSnapshot = captureControls_(document.getElementById('gen-fields'));
+  const urlSnapshot = TOOL_STATE.url.capture();
+  const urlQaSnapshot = TOOL_STATE.urlqa.capture();
   loadSpec(function() {
     renderGeneratorFields();
+    restoreControls_(document.getElementById('gen-fields'), genSnapshot);
+    TOOL_STATE.url.apply(urlSnapshot);
+    TOOL_STATE.urlqa.apply(urlQaSnapshot);
     const extInput = document.getElementById('ext-input');
     if (extInput && extInput.value && extractedLevel) runExtract();
   });
@@ -1121,13 +1140,376 @@ function bootGenerator_() {
     setTimeout(bootGenerator_, 50);
     return;
   }
-  loadSpec(function() { renderGeneratorFields(); });
+  loadSpec(function() { restoreStickyInputs_(); });
 }
 if (document.readyState === 'complete') {
   bootGenerator_();
 } else {
   window.addEventListener('load', bootGenerator_);
 }
+
+
+// ============================================================
+// CLEAR INPUTS / CLEAR RESULTS + STICKY INPUTS (every tool)
+// ============================================================
+// Every tool has the same two buttons, in the same place:
+//   Clear inputs  : empties the form, keeps the results (with an Undo).
+//   Clear results : empties the results, keeps what you entered.
+// Inputs are saved in this browser as you type, so leaving a page (each tool
+// is its own Google Sites page) and coming back brings them back. Inside a
+// page, each Generator level (P1/P2/P3) and each UTM Builder brand keeps its
+// own inputs. Uploaded files are not kept, only what they filled in.
+const STICKY_PREFIX = 'vnTaxonomyTools.v1.';
+const STICKY_TOOLS = ['gen', 'ext', 'bulk', 'qa', 'url', 'urlqa'];
+const STICKY_PANEL_TOOLS = { 'panel-gen': ['gen'], 'panel-ext': ['ext', 'bulk'], 'panel-qa': ['qa'], 'panel-url': ['url'], 'panel-urlqa': ['urlqa'] };
+const STICKY_STATUS = { gen: 'gen-status', ext: 'ext-status', bulk: 'bulk-status', qa: 'qa-status', url: 'url-status', urlqa: 'url-qa-status' };
+let genFieldState = { P1: null, P2: null, P3: null };   // raw form snapshot per Generator level
+let stickyReady_ = false;                                // no saving until the first restore ran
+const stickyTimers_ = {};
+const clearedInputs_ = {};                               // tool -> state before the last Clear inputs (Undo)
+
+function stickyRead_(tool) {
+  try { const raw = window.localStorage.getItem(STICKY_PREFIX + tool); return raw ? JSON.parse(raw) : null; }
+  catch (e) { return null; }   // private window / blocked storage: the page still works, inputs just aren't kept
+}
+function stickyWrite_(tool, state) {
+  try {
+    if (state == null) window.localStorage.removeItem(STICKY_PREFIX + tool);
+    else window.localStorage.setItem(STICKY_PREFIX + tool, JSON.stringify(state));
+  } catch (e) { /* storage unavailable or full: skip */ }
+}
+
+// ---- Generic form snapshot: every keyed control under a root, in DOM order.
+// Restoring replays them in order and fires their change handlers, so a pick
+// that renders more fields (brand -> SKU list, UTM brand -> its form) happens
+// before the fields that depend on it are filled.
+function controlKey_(el) {
+  if (el.classList.contains('ms-wrap')) return el.id ? 'ms:' + el.id : null;
+  if (el.classList.contains('date-picker-list')) return el.id ? 'dates:' + el.id : null;
+  if (el.type === 'radio') return el.name ? 'radio:' + el.name : null;
+  if (el.type === 'checkbox') {
+    if (el.id) return 'cbid:' + el.id;
+    const f = el.getAttribute('data-field');
+    return f ? 'cbf:' + el.className + '|' + f : null;
+  }
+  return el.id ? 'val:' + el.id : null;
+}
+
+function captureControls_(root) {
+  const out = [];
+  if (!root) return out;
+  root.querySelectorAll('.ms-wrap, .date-picker-list, input, select, textarea').forEach(function(el) {
+    if (!el.classList.contains('ms-wrap') && el.closest('.ms-wrap')) return;               // options belong to their picker
+    if (!el.classList.contains('date-picker-list') && el.closest('.date-picker-list')) return;
+    if (el.type === 'file' || el.type === 'button' || el.type === 'submit') return;
+    if (el.type === 'radio' && !el.checked) return;
+    const k = controlKey_(el);
+    if (!k) return;
+    let v;
+    if (k.indexOf('ms:') === 0) v = readMultiSelectValues(el.id);
+    else if (k.indexOf('dates:') === 0) v = Array.from(el.querySelectorAll('input[type="date"]')).map(function(i) { return i.value; });
+    else if (k.indexOf('cb') === 0) v = el.checked;
+    else v = el.value;
+    out.push([k, v]);
+  });
+  return out;
+}
+
+function findControl_(root, k) {
+  const i = k.indexOf(':');
+  const kind = k.slice(0, i), rest = k.slice(i + 1);
+  const esc = function(x) { return (window.CSS && CSS.escape) ? CSS.escape(x) : String(x).replace(/["\\]/g, '\\$&'); };
+  if (kind === 'radio') return root.querySelector('input[type="radio"][name="' + esc(rest) + '"]');
+  if (kind === 'cbf') {
+    const bar = rest.lastIndexOf('|');
+    const cls = rest.slice(0, bar).split(/\s+/).filter(Boolean).map(function(c) { return '.' + esc(c); }).join('');
+    return root.querySelector('input[type="checkbox"]' + cls + '[data-field="' + esc(rest.slice(bar + 1)) + '"]');
+  }
+  const el = root.querySelector('#' + esc(rest));
+  return el;
+}
+
+function applyControl_(root, el, k, v) {
+  const kind = k.slice(0, k.indexOf(':'));
+  const fire = function(target, type) { target.dispatchEvent(new Event(type, { bubbles: true })); };
+  if (kind === 'ms') {
+    if (JSON.stringify(readMultiSelectValues(el.id)) === JSON.stringify(v || [])) return;
+    setMultiSelectValues(el.id, v || []);
+    // setMultiSelectValues is silent; run the picker's own follow-up (e.g. brand -> SKU list).
+    const first = el.querySelector('.ms-option input[type="checkbox"]');
+    const m = first && /;\s*([A-Za-z_$][\w$]*)\(this\)\s*;?\s*$/.exec(first.getAttribute('onchange') || '');
+    if (m && typeof window[m[1]] === 'function') window[m[1]](el.querySelector('.ms-option input:checked') || first);
+  } else if (kind === 'dates') {
+    const vals = (v && v.length) ? v : [''];
+    const cls = (el.querySelector('input[type="date"]') || {}).className || '';
+    el.innerHTML = vals.map(function(d, n) {
+      return '<div class="date-picker-row"><input type="date" class="' + escapeAttr(cls) + '" value="' + escapeAttr(d || '') + '">' +
+             (n ? '<button type="button" class="remove-date-btn" onclick="this.parentNode.remove()">×</button>' : '') + '</div>';
+    }).join('');
+  } else if (kind === 'radio') {
+    const r = Array.prototype.find.call(root.querySelectorAll('input[type="radio"][name="' + el.name + '"]'), function(x) { return x.value === v; });
+    if (r && !r.checked) { r.checked = true; fire(r, 'change'); }
+  } else if (kind === 'cbid' || kind === 'cbf') {
+    if (el.checked !== !!v) { el.checked = !!v; fire(el, 'change'); }
+  } else if (el.value !== v) {
+    el.value = v;
+    fire(el, 'input');
+    fire(el, 'change');
+  }
+}
+
+function restoreControls_(root, entries) {
+  if (!root || !entries || !entries.length) return;
+  let pending = entries.slice();
+  // A few passes: controls rendered by an earlier pick appear on the next pass.
+  for (let pass = 0; pass < 4 && pending.length; pass++) {
+    const missing = [];
+    pending.forEach(function(entry) {
+      const el = findControl_(root, entry[0]);
+      if (el) applyControl_(root, el, entry[0], entry[1]); else missing.push(entry);
+    });
+    if (missing.length === pending.length) break;
+    pending = missing;
+  }
+}
+
+function hasInput_(entries) {
+  return (entries || []).some(function(e) {
+    const v = e[1];
+    if (e[0].indexOf('radio:') === 0) return false;                 // a radio always has a default
+    return Array.isArray(v) ? v.some(Boolean) : (v === true || (typeof v === 'string' && v.trim() !== ''));
+  });
+}
+
+// ---- Per-tool state: capture (for saving / Undo) and apply (restore) ----------
+const TOOL_STATE = {
+  gen: {
+    capture: function() {
+      const level = (document.querySelector('input[name="gen-level"]:checked') || {}).value || 'P1';
+      const fields = Object.assign({}, genFieldState);
+      fields[level] = captureControls_(document.getElementById('gen-fields'));
+      return { level: level, fields: fields, lastInputs: genLastInputs };
+    },
+    apply: function(st) {
+      genFieldState = Object.assign({ P1: null, P2: null, P3: null }, st.fields || {});
+      genLastInputs = Object.assign({ P1: null, P2: null, P3: null }, st.lastInputs || {});
+      const radio = document.querySelector('input[name="gen-level"][value="' + (st.level || 'P1') + '"]');
+      if (radio) radio.checked = true;
+      renderGeneratorFields();
+      restoreControls_(document.getElementById('gen-fields'), genFieldState[_currentRenderedGenLevel]);
+    },
+    isEmpty: function(st) { return !Object.keys(st.fields || {}).some(function(l) { return hasInput_(st.fields[l]); }); }
+  },
+  ext: {
+    capture: function() {
+      const st = { text: (document.getElementById('ext-input') || {}).value || '',
+                   level: (document.querySelector('input[name="ext-level"]:checked') || {}).value || '' };
+      if (extractedLevel && TAXONOMY && TAXONOMY[extractedLevel]) {
+        st.extracted = { level: extractedLevel, values: {} };
+        TAXONOMY[extractedLevel].fields.forEach(function(fld) {
+          const el = document.getElementById('ext_' + fld.key);
+          if (el) st.extracted.values[fld.key] = el.value;
+        });
+      }
+      return st;
+    },
+    apply: function(st) {
+      document.getElementById('ext-input').value = st.text || '';
+      const r = document.querySelector('input[name="ext-level"][value="' + (st.level || '') + '"]');
+      if (r) r.checked = true;
+      if (st.extracted && TAXONOMY && TAXONOMY[st.extracted.level]) {
+        extractedLevel = st.extracted.level;
+        extractedValues = st.extracted.values;
+        renderExtractorFields(extractedLevel, extractedValues);
+        document.getElementById('ext-rebuild-area').style.display = 'block';
+      }
+    },
+    isEmpty: function(st) { return !String(st.text || '').trim() && !st.extracted; }
+  },
+  bulk: {
+    capture: function() {
+      return { text: (document.getElementById('bulk-input') || {}).value || '', changes: collectBulkChanges(), overrides: bulkCsvOverrides };
+    },
+    apply: function(st) {
+      document.getElementById('bulk-input').value = st.text || '';
+      bulkCsvOverrides = st.overrides || null;
+      document.getElementById('bulk-changes').innerHTML = '';
+      (st.changes || []).forEach(function(c) { addBulkChangeRow(c.field, c.value); });
+    },
+    isEmpty: function(st) { return !String(st.text || '').trim() && !(st.changes || []).length; }
+  },
+  qa: {
+    capture: function() { return { text: (document.getElementById('qa-input') || {}).value || '' }; },
+    apply: function(st) { document.getElementById('qa-input').value = st.text || ''; },
+    isEmpty: function(st) { return !String(st.text || '').trim(); }
+  },
+  url: {
+    capture: function() {
+      const brand = (document.getElementById('url_brand') || {}).value || '';
+      const byBrand = Object.assign({}, urlBrandState);
+      if (brand) byBrand[brand] = captureUrlBrand_();
+      return { brand: brand, byBrand: byBrand };
+    },
+    apply: function(st) {
+      urlBrandState = Object.assign({}, st.byBrand || {});
+      _urlRenderedBrand = '';
+      const sel = document.getElementById('url_brand');
+      if (sel) sel.value = st.brand || '';
+      onUrlBrandChange();
+    },
+    isEmpty: function(st) { return !st.brand && !Object.keys(st.byBrand || {}).length; }
+  },
+  urlqa: {
+    capture: function() { return { controls: captureControls_(document.getElementById('panel-urlqa')) }; },
+    apply: function(st) { restoreControls_(document.getElementById('panel-urlqa'), st.controls); },
+    isEmpty: function(st) { return !hasInput_(st.controls); }
+  }
+};
+
+// ---- Clearing -------------------------------------------------------------------
+const TOOL_CLEAR_INPUTS = {
+  gen: function() {
+    const level = (document.querySelector('input[name="gen-level"]:checked') || {}).value || 'P1';
+    genFieldState[level] = null;
+    genLastInputs[level] = null;
+    renderGeneratorFields();
+  },
+  ext: function() {
+    document.getElementById('ext-input').value = '';
+    const auto = document.querySelector('input[name="ext-level"][value=""]');
+    if (auto) auto.checked = true;
+    document.getElementById('ext-fields').innerHTML = '';
+    document.getElementById('ext-rebuild-area').style.display = 'none';
+    extractedLevel = null;
+    extractedValues = null;
+  },
+  bulk: function() {
+    document.getElementById('bulk-input').value = '';
+    document.getElementById('bulk-file').value = '';
+    document.getElementById('bulk-file-status').innerHTML = '';
+    document.getElementById('bulk-changes').innerHTML = '';
+    bulkCsvOverrides = null;
+  },
+  qa: function() {
+    document.getElementById('qa-input').value = '';
+    document.getElementById('qa-file').value = '';
+    document.getElementById('qa-file-status').innerHTML = '';
+  },
+  url: function() {
+    urlBrandState = {};
+    _urlRenderedBrand = '';
+    URL_BULK_ROWS = [];
+    const sel = document.getElementById('url_brand');
+    if (sel) sel.value = '';
+    onUrlBrandChange();
+  },
+  urlqa: function() {
+    document.getElementById('url-qa-brand').value = '';
+    document.getElementById('url-qa-platform').value = '';
+    onUrlQABrandChange();
+    document.getElementById('url-qa-input').value = '';
+    document.getElementById('url-qa-file').value = '';
+    document.getElementById('url-qa-file-status').innerHTML = '';
+  }
+};
+
+const TOOL_CLEAR_RESULTS = {
+  gen: function() {
+    document.getElementById('gen-results').innerHTML = '';
+    genLastResults = { level: null, names: [] };
+  },
+  ext: function() {
+    // The rebuilt name is the result; the extracted fields are inputs and stay.
+    document.getElementById('ext-output').textContent = '';
+  },
+  bulk: function() {
+    document.getElementById('bulk-results').innerHTML = '';
+    bulkLastResults = null;
+  },
+  qa: function() {
+    document.getElementById('qa-results').innerHTML = '';
+    document.getElementById('qa-export-btn').disabled = true;
+    document.getElementById('qa-csv-btn').disabled = true;
+    qaLastResults = null;
+  },
+  url: function() {
+    document.getElementById('url-results').innerHTML = '';
+    urlLastResults = null;
+  },
+  urlqa: function() {
+    document.getElementById('url-qa-results').innerHTML = '';
+    document.getElementById('url-qa-export-btn').disabled = true;
+    document.getElementById('url-qa-csv-btn').disabled = true;
+    urlQALastResults = null;
+  }
+};
+
+function clearInputs(tool) {
+  clearedInputs_[tool] = TOOL_STATE[tool].capture();
+  TOOL_CLEAR_INPUTS[tool]();
+  stickySaveNow_(tool);
+  setStatus(STICKY_STATUS[tool], 'Inputs cleared. Results kept. <a href="#" onclick="undoClearInputs(\'' + tool + '\'); return false;">Undo</a>');
+}
+
+function undoClearInputs(tool) {
+  const st = clearedInputs_[tool];
+  if (!st) return;
+  TOOL_STATE[tool].apply(st);
+  clearedInputs_[tool] = null;
+  stickySaveNow_(tool);
+  setStatus(STICKY_STATUS[tool], '<span class="pass">Inputs restored.</span>');
+}
+
+function clearResults(tool) {
+  TOOL_CLEAR_RESULTS[tool]();
+  setStatus(STICKY_STATUS[tool], 'Results cleared. Your inputs are unchanged.');
+}
+
+// ---- Saving and restoring ---------------------------------------------------
+function stickySaveNow_(tool) {
+  if (!stickyReady_) return;
+  try {
+    const st = TOOL_STATE[tool].capture();
+    stickyWrite_(tool, TOOL_STATE[tool].isEmpty(st) ? null : st);
+  } catch (e) { /* a half-rendered form is not worth saving */ }
+}
+
+function scheduleStickySave_(tool) {
+  if (!stickyReady_) return;
+  clearTimeout(stickyTimers_[tool]);
+  stickyTimers_[tool] = setTimeout(function() { stickySaveNow_(tool); }, 400);
+}
+
+/** Runs once, after the spec loads: brings back each tool's saved inputs. */
+function restoreStickyInputs_() {
+  STICKY_TOOLS.forEach(function(tool) {
+    const st = stickyRead_(tool);
+    if (!st) { if (tool === 'gen') renderGeneratorFields(); return; }
+    try {
+      TOOL_STATE[tool].apply(st);
+      if (!TOOL_STATE[tool].isEmpty(st)) {
+        setStatus(STICKY_STATUS[tool], 'Restored your last inputs. Use <strong>Clear inputs</strong> to start fresh.');
+      }
+    } catch (e) {
+      stickyWrite_(tool, null);                         // a saved state this version can't read: drop it
+      if (tool === 'gen') renderGeneratorFields();
+    }
+  });
+  stickyReady_ = true;
+}
+
+Object.keys(STICKY_PANEL_TOOLS).forEach(function(panelId) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  ['input', 'change', 'click'].forEach(function(type) {
+    panel.addEventListener(type, function() { STICKY_PANEL_TOOLS[panelId].forEach(scheduleStickySave_); });
+  });
+});
+// Leaving the page (another Sites page, a reload, a closed tab) saves right away.
+window.addEventListener('pagehide', function() { STICKY_TOOLS.forEach(stickySaveNow_); });
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden') STICKY_TOOLS.forEach(stickySaveNow_);
+});
 
 // ============================================================
 // GENERATOR
@@ -2296,12 +2678,6 @@ function downloadGeneratedCsv() {
   setStatus('gen-status', '<span class="pass">Downloaded CSV with ' + names.length + ' name' + (names.length === 1 ? '' : 's') + '</span>');
 }
 
-function clearGenerator() {
-  renderGeneratorFields();
-  document.getElementById('gen-status').innerHTML = '';
-  document.getElementById('gen-results').innerHTML = '';
-  genLastResults = { level: null, names: [] };
-}
 
 // ============================================================
 // EXTRACTOR
@@ -2582,34 +2958,6 @@ function copyExtractedRebuild() {
   writeToClipboard(out.textContent, 'ext-status', 'rebuilt name');
 }
 
-/** Wipe the Single-Name Extractor back to its initial state. */
-function resetExtractor() {
-  // 1. Clear the pasted-name textarea
-  const input = document.getElementById('ext-input');
-  if (input) input.value = '';
-
-  // 2. Reset the level-picker radios back to Auto
-  const autoRadio = document.querySelector('input[name="ext-level"][value=""]');
-  if (autoRadio) autoRadio.checked = true;
-
-  // 3. Wipe the rendered field form
-  const fields = document.getElementById('ext-fields');
-  if (fields) fields.innerHTML = '';
-
-  // 4. Hide the Rebuild section and clear its output box
-  const rebuildArea = document.getElementById('ext-rebuild-area');
-  if (rebuildArea) rebuildArea.style.display = 'none';
-  const output = document.getElementById('ext-output');
-  if (output) output.textContent = '';
-
-  // 5. Clear status
-  const status = document.getElementById('ext-status');
-  if (status) status.innerHTML = '';
-
-  // 6. Reset in-memory state
-  extractedLevel = null;
-  extractedValues = null;
-}
 
 // ============================================================
 // BULK EDIT
@@ -3073,16 +3421,6 @@ function downloadBulkCsv() {
   downloadCsv('taxonomy-bulk-edit-' + timestamp() + '.csv', csv);
 }
 
-function clearBulk() {
-  document.getElementById('bulk-input').value = '';
-  document.getElementById('bulk-file').value = '';
-  document.getElementById('bulk-file-status').innerHTML = '';
-  document.getElementById('bulk-status').innerHTML = '';
-  document.getElementById('bulk-results').innerHTML = '';
-  document.getElementById('bulk-changes').innerHTML = '';
-  bulkCsvOverrides = null;
-  bulkLastResults  = null;
-}
 
 // ============================================================
 // URL BUILDER
@@ -3101,11 +3439,33 @@ function isFixedTemplateBrand_(brand) {
   return Object.prototype.hasOwnProperty.call(t, brand);
 }
 
+let _urlRenderedBrand = '';
+let urlBrandState = {};   // brand -> { controls, bulkRows }: inputs kept per brand
+
 function onUrlBrandChange() {
   const brand = (document.getElementById('url_brand') || {}).value || '';
   const host  = document.getElementById('url-fields-host');
   const hint  = document.getElementById('url_brand_hint');
   if (!host) return;
+  if (_urlRenderedBrand) urlBrandState[_urlRenderedBrand] = captureUrlBrand_();
+  renderUrlBrandFields_(brand, host, hint);
+  _urlRenderedBrand = brand;
+  restoreUrlBrand_(urlBrandState[brand]);
+  scheduleStickySave_('url');
+}
+
+function captureUrlBrand_() {
+  return { controls: captureControls_(document.getElementById('url-fields-host')), bulkRows: (URL_BULK_ROWS || []).slice() };
+}
+
+function restoreUrlBrand_(saved) {
+  URL_BULK_ROWS = (saved && saved.bulkRows) ? saved.bulkRows.slice() : [];
+  if (!saved) return;
+  restoreControls_(document.getElementById('url-fields-host'), saved.controls);
+  if (URL_BULK_ROWS.length) renderBulkUrlList_();
+}
+
+function renderUrlBrandFields_(brand, host, hint) {
   if (!brand) {
     host.style.display = 'none';
     host.innerHTML = '';
@@ -3693,18 +4053,6 @@ function downloadUrlBuilderCsv() {
   setStatus('url-status', '<span class="pass">Downloaded CSV with ' + rows.length + ' row' + (rows.length === 1 ? '' : 's') + '</span>');
 }
 
-function clearUrlBuilder() {
-  const brandSel = document.getElementById('url_brand');
-  if (brandSel) brandSel.value = '';
-  const host = document.getElementById('url-fields-host');
-  if (host) { host.style.display = 'none'; host.innerHTML = ''; }
-  document.getElementById('url-status').innerHTML = '';
-  document.getElementById('url-results').innerHTML = '';
-  const hint = document.getElementById('url_brand_hint');
-  if (hint) hint.textContent = '';
-  urlLastResults = null;
-  URL_BULK_ROWS = [];
-}
 
 // ============================================================
 // URL QA — paste/upload existing URLs and validate against templates
@@ -3895,23 +4243,6 @@ function renderUrlQAResults() {
     '</div>';
 }
 
-function clearUrlQA() {
-  const brandSel    = document.getElementById('url-qa-brand');
-  const platformSel = document.getElementById('url-qa-platform');
-  if (brandSel)    brandSel.value = '';
-  if (platformSel) platformSel.value = '';
-  onUrlQABrandChange();  // hide platform / utc hint
-  document.getElementById('url-qa-input').value = '';
-  document.getElementById('url-qa-file').value = '';
-  document.getElementById('url-qa-file-status').innerHTML = '';
-  document.getElementById('url-qa-status').innerHTML = '';
-  document.getElementById('url-qa-results').innerHTML = '';
-  urlQALastResults = null;
-  const exportBtn = document.getElementById('url-qa-export-btn');
-  const csvBtn    = document.getElementById('url-qa-csv-btn');
-  if (exportBtn) exportBtn.disabled = true;
-  if (csvBtn)    csvBtn.disabled = true;
-}
 
 function exportUrlQAToNewFile() {
   if (!urlQALastResults || urlQALastResults.length === 0) return;
@@ -4229,16 +4560,6 @@ function downloadQACsv() {
   setStatus('qa-status', '<span class="pass">Downloaded CSV with ' + qaLastResults.length + ' row' + (qaLastResults.length === 1 ? '' : 's') + '</span>');
 }
 
-function clearQA() {
-  document.getElementById('qa-input').value = '';
-  document.getElementById('qa-file').value = '';
-  document.getElementById('qa-file-status').innerHTML = '';
-  document.getElementById('qa-status').innerHTML = '';
-  document.getElementById('qa-results').innerHTML = '';
-  document.getElementById('qa-export-btn').disabled = true;
-  document.getElementById('qa-csv-btn').disabled = true;
-  qaLastResults = null;
-}
 
 // ============================================================
 // UTILS

@@ -87,6 +87,20 @@ The ids are `GENERATOR_PAGES` in `code.gs`; the test suite fails if they drift f
 `Index.html`. `Index.html` is served as a template, so **never write `<?` anywhere in it** (comments
 included) except the one line that injects the page. The suite counts them.
 
+## Clear inputs, Clear results, and sticky inputs
+
+Every tool has the same two buttons, in the same place, before its main action:
+**Clear inputs** empties the form and keeps the results (with an Undo in the status line);
+**Clear results** empties the results and keeps the form. The suite fails if a tool loses either.
+
+Inputs are saved in the viewer's browser (`localStorage`, keys `vnTaxonomyTools.v1.<tool>`) as they
+type, so leaving a Sites page and coming back, or reloading, brings them back with a "Restored your
+last inputs" note. Inside a page, each Generator level (P1/P2/P3) and each UTM Builder brand keeps
+its own inputs. Uploaded files aren't kept, only what they filled in. Results are not saved. A
+private window or blocked storage just means nothing is kept; the tools still work. The engine is
+the `CLEAR INPUTS / CLEAR RESULTS + STICKY INPUTS` section of `Index.html`: a tool plugs in through
+`TOOL_STATE`, `TOOL_CLEAR_INPUTS` and `TOOL_CLEAR_RESULTS`.
+
 ## UVI UTM Builder: dynamic Ad ID, platform and placement
 
 - **Multiple values, like the Generator.** Every field takes one or more values and the tool
