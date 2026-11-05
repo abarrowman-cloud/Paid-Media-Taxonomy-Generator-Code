@@ -312,6 +312,24 @@ throws('UVI form: blank lines do not count as values', () => expandUviSelections
 throws('UVI form: combination cap', () => expandUviSelections(uviForm({ influencer: Array.from({ length: 30 }, (_, k) => 'h' + k), assetVersion: Array.from({ length: 20 }, (_, k) => String(k)) })), 'limit 500');
 eq('UVI RPC returns the error, not a throw', runUviUrlBuilder(uviForm({ geo: [] })).ok, false);
 
+// Legacy / New Dynamic toggle. Legacy is the structure live today (client has not
+// approved the new one): typed Ad ID, 10 segments, nothing appended.
+const legacyForm = (o) => uviForm(Object.assign({ uviVersion: 'legacy', adId: ['52514734464598'] }, o));
+eq('UVI legacy: rebuilds the live URL byte for byte', builtFrom(legacyForm({}))[0].fullUrl, LIVE);
+eq('UVI legacy: 10 segments', builtFrom(legacyForm({}))[0].breakout.campaign.split('_').length, 10);
+eq('UVI legacy: TikTok source, typed ID, no tail', builtFrom(legacyForm({ source: ['tiktok'], adId: ['1875279355347506'] }))[0].breakout.campaign.slice(-19), '_1_1875279355347506');
+throws('UVI legacy: Ad ID is required', () => expandUviSelections(legacyForm({ adId: [] })), 'Missing required field: Ad ID');
+eq('UVI legacy: 2 Ad IDs x 1 = 2 URLs', expandUviSelections(legacyForm({ adId: ['111', '222'] })).length, 2);
+const legacyPaired = expandUviSelections(legacyForm({ adId: ['111', '222'], influencer: ['a', 'b'], pairedFieldKeys: ['adId', 'influencer'] }));
+eq('UVI legacy: Ad ID pairs line-by-line', legacyPaired.map((i) => i.influencer + i.adId).join(','), 'a111,b222');
+eq('UVI dynamic: explicit version = default', builtFrom(uviForm({ uviVersion: 'dynamic' }))[0].fullUrl, builtFrom(UVI_FORM)[0].fullUrl);
+eq('UVI dynamic: a stray Ad ID is ignored', builtFrom(uviForm({ uviVersion: 'dynamic', adId: ['999'] }))[0].fullUrl, builtFrom(UVI_FORM)[0].fullUrl);
+throws('UVI: unknown version refused', () => expandUviSelections(uviForm({ uviVersion: 'v3' })), 'Unknown UTM version');
+const uiHtml = require('fs').readFileSync(require('path').join(__dirname, '..', 'Index.html'), 'utf8');
+eq('UVI form: Legacy is the default version', /version\('legacy', 'Legacy', [^)]*true\)/.test(uiHtml), true);
+eq('UVI form: New Dynamic option present', uiHtml.indexOf("version('dynamic', 'New Dynamic'") !== -1, true);
+eq('UVI form: sends the version and legacy Ad ID', /uviVersion:\s+uviVersion_\(\)/.test(uiHtml) && /adId:\s+uviVersion_\(\) === 'legacy'/.test(uiHtml), true);
+
 // =====================================================================
 // F. Page routing — one Google Sites page per tool
 //

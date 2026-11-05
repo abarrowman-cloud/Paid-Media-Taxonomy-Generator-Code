@@ -2466,18 +2466,30 @@ const UVI_FORM_FIELDS = [
   { key: 'creativeType',   label: 'Creative Type' },
   { key: 'assetVersion',   label: 'Asset Version' }
 ];
+/** Legacy version only: Ad ID typed by hand, no platform + placement tail. */
+const UVI_LEGACY_AD_ID_FIELD = { key: 'adId', label: 'Ad ID' };
+const UVI_VERSIONS = ['legacy', 'dynamic'];
 const UVI_MAX_URLS = 500;
 const UVI_PLATFORM_LABELS = { meta: 'Meta', tiktok: 'TikTok', google: 'YouTube' };
 
-/** Expand UVI form selections into one buildUtmUrl input per URL. */
+/**
+ * Expand UVI form selections into one buildUtmUrl input per URL.
+ * selections.uviVersion picks the structure (UVI_VERSIONS, default 'dynamic'):
+ *   dynamic: Ad ID from the source's token, platform + placement appended (12 segments)
+ *   legacy:  Ad ID typed per line, nothing appended (the 10-segment structure live today)
+ */
 function expandUviSelections(selections) {
   selections = selections || {};
+  const version = selections.uviVersion || 'dynamic';
+  if (UVI_VERSIONS.indexOf(version) === -1) throw new Error('Unknown UTM version "' + version + '". Pick Legacy or New Dynamic.');
+  const legacy = version === 'legacy';
+  const fields = legacy ? UVI_FORM_FIELDS.concat([UVI_LEGACY_AD_ID_FIELD]) : UVI_FORM_FIELDS;
   const pairedSet = {};
   (selections.pairedFieldKeys || []).forEach(function(k) { pairedSet[k] = true; });
   const paired = {};
   const keys = [];
   const lists = [];
-  UVI_FORM_FIELDS.forEach(function(f) {
+  fields.forEach(function(f) {
     const vals = toTrimmedArray(selections[f.key]);
     if (vals.length === 0) throw new Error('Missing required field: ' + f.label);
     if (pairedSet[f.key]) paired[f.key] = vals;
@@ -2490,7 +2502,7 @@ function expandUviSelections(selections) {
   } catch (e) {
     // Name the field the way the form does, not by its internal key.
     let msg = e.message;
-    UVI_FORM_FIELDS.forEach(function(f) { msg = msg.split('"' + f.key + '"').join('"' + f.label + '"'); });
+    fields.forEach(function(f) { msg = msg.split('"' + f.key + '"').join('"' + f.label + '"'); });
     throw new Error(msg);
   }
 
@@ -2503,6 +2515,7 @@ function expandUviSelections(selections) {
     const input = { brand: 'Unique Vacations Inc.' };
     Object.assign(input, combo[0]);
     keys.forEach(function(k, j) { input[k] = combo[j + 1]; });
+    if (legacy) input.includeDynamicTail = false;
     // Platform drives the "where to paste it" instructions in the results.
     input.platform = UVI_PLATFORM_LABELS[uviSourcePlatform_(urlBuilderSanitize_(input.source))] || '';
     return input;

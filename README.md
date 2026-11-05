@@ -103,10 +103,14 @@ the `CLEAR INPUTS / CLEAR RESULTS + STICKY INPUTS` section of `Index.html`: a to
 
 ## UVI UTM Builder: dynamic Ad ID, platform and placement
 
+- **Two versions, picked at the top of the form.** *Legacy* (the default) is the structure live
+  today: 10 segments, Ad ID typed by hand, one per line, nothing appended. *New Dynamic* is
+  everything below. Legacy stays the default until the client approves the new structure; the
+  form sends `uviVersion` and `expandUviSelections` builds accordingly. URL QA accepts both.
 - **Multiple values, like the Generator.** Every field takes one or more values and the tool
   builds every combination; fields ticked *Pair line-by-line* zip row by row instead (e.g. each hotel
   with its own landing page). Expansion is `expandUviSelections` in `code.gs`, capped at 500 URLs.
-- **Ad ID (segment 10) is automatic.** The form has no Ad ID input: each row gets its UTM Source's
+- **Ad ID (segment 10) is automatic** in New Dynamic. The form has no Ad ID input there: each row gets its UTM Source's
   dynamic token, `{{ad.id}}` (Meta), `__ADID_V2__` (TikTok), `{creative}` (Google), or `na` for
   source `na`. Tokens skip the sanitizer, which would otherwise strip TikTok's underscores.
 - **TikTok is one platform** across every brand, on the Smart+ macros (TikTok's default campaign type).

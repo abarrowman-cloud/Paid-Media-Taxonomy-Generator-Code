@@ -3477,6 +3477,7 @@ function renderUrlBrandFields_(brand, host, hint) {
   if (brand === 'Unique Vacations Inc.') {
     if (hint) hint.textContent = 'Composite campaign build — lowercase, special chars stripped, joined with "_".';
     host.innerHTML = renderUrlUtcFields_();
+    onUviVersionChange();
   } else if (isFixedTemplateBrand_(brand)) {
     if (hint) hint.textContent = 'Fixed brand template — every URL gets: ' + String(URL_BUILDER.brandTemplates[brand]).replace(/^\?/, '');
     host.innerHTML = renderUrlPlatformFields_(true);
@@ -3639,7 +3640,18 @@ function renderUrlUtcFields_() {
     return '<textarea id="url_' + key + '" rows="2" placeholder="' + escapeAttr(placeholder) + '"' + (guarded ? guardAttrs : '') + '></textarea>' +
            (guarded ? freeTextHint : '') + pair(key);
   };
+  const version = function(value, label, desc, checked) {
+    return '<label style="display:block; margin-top:4px;"><input type="radio" name="uvi-version" value="' + value + '"' + (checked ? ' checked' : '') + ' onchange="onUviVersionChange()"> ' +
+             '<strong>' + label + '</strong><span style="display:block; margin:2px 0 0 20px; text-transform:none; letter-spacing:0; font-style:normal; font-weight:400; font-size:12px; color:var(--vn-muted);">' + desc + '</span></label>';
+  };
   return (
+    '<div class="field-grid">' +
+      '<div class="field-cell wide" style="background:var(--vn-soft); border-radius:6px; padding:10px 12px; border:1px solid var(--vn-line);">' +
+        '<div class="field-header"><span class="field-num">★</span><span class="field-label">UTM version</span></div>' +
+        version('legacy', 'Legacy', 'The structure live today: 10 parts, Ad ID typed in by hand.', true) +
+        version('dynamic', 'New Dynamic', 'Ad ID filled in by Meta / TikTok at click time, plus platform and placement (12 parts). Use once the client approves.', false) +
+      '</div>' +
+    '</div>' +
     '<div class="hint" style="margin-bottom:10px;">Enter several values in any field (one per line, or pick several) and the tool builds a URL for every combination. ' +
       'Tick <strong>Pair line-by-line</strong> on fields whose values belong together, for example each hotel with its own landing page: the 1st value goes with the 1st, the 2nd with the 2nd, and so on.</div>' +
     '<div class="field-grid">' +
@@ -3653,14 +3665,35 @@ function renderUrlUtcFields_() {
       cell_(7, 'Hotel Code', '(3-letter code)', multi('hotel', u.hotelOptions)) +
       cell_(8, 'Creative Type', '', multi('creativeType', u.creativeTypeOptions)) +
       cell_(9, 'Asset Version', '(usually numeric)', lines('assetVersion', '1', true)) +
-      cell_(10, 'Ad ID', '(automatic)',
-        '<div class="hint" id="url_autoAdId" style="font-family:\'JetBrains Mono\', monospace;">Pick a UTM Source</div>' +
-        '<div class="hint">Nothing to enter. Meta or TikTok swaps in each ad\'s real ID the moment someone clicks, so you can build the URL before the ad even exists.</div>') +
+      cell_(10, 'Ad ID', '',
+        '<div id="uvi-adid-dynamic">' +
+          '<div class="hint">(automatic)</div>' +
+          '<div class="hint" id="url_autoAdId" style="font-family:\'JetBrains Mono\', monospace;">Pick a UTM Source</div>' +
+          '<div class="hint">Nothing to enter. Meta or TikTok swaps in each ad\'s real ID the moment someone clicks, so you can build the URL before the ad even exists.</div>' +
+        '</div>' +
+        '<div id="uvi-adid-legacy">' + lines('adId', 'One Ad ID per line, e.g. 52514347253798', true) + '</div>') +
       cell_(11, 'Platform + Placement', '(automatic)',
         '<div class="hint" id="url_dynamicTail" style="font-family:\'JetBrains Mono\', monospace;">Pick a UTM Source</div>' +
         '<div class="hint">Nothing to enter. When someone clicks, the platform records which app they were in (Facebook or Instagram) and where the ad showed up (feed, stories, reels and so on). On TikTok it records TikTok or a partner app. You get this detail without splitting ad sets by placement.</div>') +
     '</div>'
   );
+}
+
+/** Selected UVI UTM version: 'legacy' (default) or 'dynamic'. */
+function uviVersion_() {
+  const r = document.querySelector('input[name="uvi-version"]:checked');
+  return (r && r.value) || 'legacy';
+}
+
+/** Legacy: show the typed Ad ID, hide platform + placement. Dynamic: the reverse. */
+function onUviVersionChange() {
+  const legacy = uviVersion_() === 'legacy';
+  const toggle = function(id, show) { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; };
+  toggle('uvi-adid-legacy', legacy);
+  toggle('uvi-adid-dynamic', !legacy);
+  const tail = document.getElementById('url_dynamicTail');
+  const tailCell = tail && tail.closest('.field-cell');
+  if (tailCell) tailCell.style.display = legacy ? 'none' : '';
 }
 
 /** Refresh the two automatic cells for whichever UTM Sources are picked. */
@@ -3773,6 +3806,8 @@ function readUrlBuilderInput_() {
       hotel:          readMultiSelectValues('url_hotel'),
       creativeType:   readMultiSelectValues('url_creativeType'),
       assetVersion:   linesOf('url_assetVersion'),
+      uviVersion:     uviVersion_(),
+      adId:           uviVersion_() === 'legacy' ? linesOf('url_adId') : [],
       pairedFieldKeys: Array.from(document.querySelectorAll('.uvi-pair-cb:checked')).map(function(cb) { return cb.getAttribute('data-field'); })
     };
   }
